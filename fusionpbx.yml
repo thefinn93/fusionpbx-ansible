@@ -1,0 +1,22 @@
+---
+- hosts: fusionpbx
+  user: root
+  vars:
+    - default_username: admin
+    - default_password: admin
+    - max_upload_size: 25M
+    - fs_conf_dir: /etc/freeswitch
+    - fs_dflt_conf_dir: /usr/share/freeswitch/conf
+    - fs_log_dir: /var/log/freeswitch
+    - fs_scripts_dir: /var/lib/freeswitch/scripts
+    - fs_storage_dir: /var/lib/freeswitch/storage
+    - www_path: /var/www
+    - wui_name: fusionpbx
+    - php_ini: /etc/php5/fpm/php.ini
+    - pgsql_admin: pgsqladmin
+    - pgsql_username: fusionpbxadmin
+  tasks:
+    - include: roles/fusionpbx/tasks/freeswitch.yml
+    - include: roles/fusionpbx/tasks/web.yml
+    - include: roles/fusionpbx/tasks/fusionpbx.yml
+    - include: roles/fusionpbx/tasks/security.yml

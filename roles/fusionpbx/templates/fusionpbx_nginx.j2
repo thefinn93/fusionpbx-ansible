@@ -1,0 +1,142 @@
+server{
+        listen 127.0.0.1:80;
+        server_name 127.0.0.1;
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        client_max_body_size {{ max_upload_size }};
+        client_body_buffer_size 128k;
+
+        location / {
+                root {{ www_path }}/{{ wui_name }};
+                index index.php;
+        }
+
+        location ~ \.php$ {
+                fastcgi_pass unix:/var/run/php5-fpm.sock;
+                #fastcgi_pass 127.0.0.1:9000;
+                fastcgi_index index.php;
+                include fastcgi_params;
+                fastcgi_param   SCRIPT_FILENAME {{ www_path }}/{{ wui_name }}$fastcgi_script_name;
+        }
+
+        # Disable viewing .htaccess & .htpassword & .db
+        location ~ .htaccess {
+                        deny all;
+        }
+        location ~ .htpassword {
+                        deny all;
+        }
+        location ~^.+.(db)$ {
+                        deny all;
+        }
+}
+
+server{
+        listen 80;
+        listen [::]:80 default_server ipv6only=on;
+        server_name {{ wui_name }};
+        if ($uri !~* ^.*provision.*$) {
+                rewrite ^(.*) https://$host$1 permanent;
+                break;
+        }
+
+    #grandstream
+        rewrite "^.*/provision/cfg([A-Fa-f0-9]{12})(\.(xml|cfg))?$" /app/provision/?mac=$1;
+
+    #aastra
+    #rewrite "^.*/provision/([A-Fa-f0-9]{12})(\.(cfg))?$" /app/provision/?mac=$1 last;
+
+    #yealink common
+    rewrite "^.*/provision/(y[0-9]{12})(\.cfg)?$" /app/provision/index.php?file=$1$2;
+
+    #yealink mac
+    rewrite "^.*/([A-Fa-f0-9]{12})(\.(xml|cfg))?$" /app/provision/index.php?mac=$1 last;
+
+    if ($uri !~* ^.*provision.*$) {
+      rewrite ^(.*) https://$host$1 permanent;
+      break;
+    }
+
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        client_max_body_size {{ max_upload_size }};
+        client_body_buffer_size 128k;
+
+        location / {
+          root {{ www_path }}/{{ wui_name }};
+          index index.php;
+        }
+
+        location ~ \.php$ {
+            fastcgi_pass unix:/var/run/php5-fpm.sock;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param   SCRIPT_FILENAME {{ www_path }}/{{ wui_name }}$fastcgi_script_name;
+        }
+
+        # Disable viewing .htaccess & .htpassword & .db
+        location ~ .htaccess {
+                deny all;
+        }
+        location ~ .htpassword {
+                deny all;
+        }
+        location ~^.+.(db)$ {
+                deny all;
+        }
+}
+
+server{
+        listen 443;
+        listen [::]:443 default_server ipv6only=on;
+        server_name {{ wui_name }};
+        ssl                     on;
+        ssl_certificate         /etc/ssl/certs/ssl-cert-snakeoil.pem;
+        ssl_certificate_key     /etc/ssl/private/ssl-cert-snakeoil.key;
+        ssl_protocols           SSLv3 TLSv1;
+        ssl_session_timeout		5m;
+        ssl_ciphers     HIGH:!ADH:!MD5;
+
+    #grandstream
+        rewrite "^.*/provision/cfg([A-Fa-f0-9]{12})(\.(xml|cfg))?$" /app/provision/?mac=$1;
+
+    #aastra
+    #rewrite "^.*/provision/([A-Fa-f0-9]{12})(\.(cfg))?$" /app/provision/?mac=$1 last;
+
+    #yealink common
+    rewrite "^.*/provision/(y[0-9]{12})(\.cfg)?$" /app/provision/index.php?file=$1$2;
+
+    #yealink mac
+    rewrite "^.*/provision/([A-Fa-f0-9]{12})(\.(xml|cfg))?$" /app/provision/index.php?mac=$1 last;
+
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        client_max_body_size {{ max_upload_size }};
+        client_body_buffer_size 128k;
+
+        location / {
+          root {{ www_path }}/{{ wui_name }};
+          index index.php;
+        }
+
+        location ~ \.php$ {
+            fastcgi_pass unix:/var/run/php5-fpm.sock;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param   SCRIPT_FILENAME {{ www_path }}/{{ wui_name }}$fastcgi_script_name;
+        }
+
+        # Disable viewing .htaccess & .htpassword & .db
+        location ~ .htaccess {
+                deny all;
+        }
+        location ~ .htpassword {
+                deny all;
+        }
+        location ~^.+.(db) {
+                deny all;
+        }
+}

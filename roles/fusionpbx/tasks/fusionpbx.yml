@@ -1,0 +1,124 @@
+- name: Install fusionpbx packages with --force because they're unsigned (we don't bother with that "security" crap)
+  apt: name={{ item }} state=installed force=yes
+  with_items:
+    - fusionpbx-core
+    - fusionpbx-app-calls
+    - fusionpbx-app-calls-active
+    - fusionpbx-app-call-block
+    - fusionpbx-app-contacts
+    - fusionpbx-app-destinations
+    - fusionpbx-app-dialplan
+    - fusionpbx-app-dialplan-inbound
+    - fusionpbx-app-dialplan-outbound
+    - fusionpbx-app-extensions
+    - fusionpbx-app-follow-me
+    - fusionpbx-app-gateways
+    - fusionpbx-app-ivr-menu
+    - fusionpbx-app-login
+    - fusionpbx-app-log-viewer
+    - fusionpbx-app-modules
+    - fusionpbx-app-music-on-hold
+    - fusionpbx-app-recordings
+    - fusionpbx-app-registrations
+    - fusionpbx-app-ring-groups
+    - fusionpbx-app-settings
+    - fusionpbx-app-sip-profiles
+    - fusionpbx-app-sip-status
+    - fusionpbx-app-system
+    - fusionpbx-app-time-conditions
+    - fusionpbx-app-xml-cdr
+    - fusionpbx-app-vars
+    - fusionpbx-app-voicemails
+    - fusionpbx-app-voicemail-greetings
+    - fusionpbx-conf
+    - fusionpbx-scripts
+    - fusionpbx-sqldb
+    - fusionpbx-theme-enhanced
+    - fusionpbx-music-default
+- name: Set permissions in /var/lib/fusionpbx
+  command: find "/var/lib/fusionpbx" -type {{ item.type }} -exec chmod {{ item.mode }} {} +
+  with_items:
+    - { type: 'd', mode: '775' }
+    - { type: 'f', mode: 664 }
+- name: Install additional modules with --force (continuing to not bother with that "security" crap)
+  apt: name={{ item }} state=installed force=yes
+  with_items:
+    - fusionpbx-app-adminer
+    - fusionpbx-app-backup
+    - fusionpbx-app-call-broadcast
+    - freeswitch-mod-callcenter
+    - fusionpbx-app-call-center
+    - fusionpbx-app-call-center-active
+    - fusionpbx-app-call-flows
+    - freeswitch-mod-conference
+    - fusionpbx-app-conference-centers
+    - fusionpbx-app-conferences-active
+    - fusionpbx-app-meetings
+    - fusionpbx-app-conferences
+    - fusionpbx-app-content
+    - fusionpbx-app-edit
+    - fusionpbx-app-exec
+    - freeswitch-mod-fifo
+    - fusionpbx-app-fifo
+    - fusionpbx-app-fifo-list
+    - ghostscript
+    - libreoffice-common
+    - fusionpbx-app-fax
+    - fusionpbx-app-hot-desking
+    - fusionpbx-app-schemas
+    - fusionpbx-app-services
+    - fusionpbx-app-sipml5
+    - freeswitch-mod-rtmp
+    - fusionpbx-app-sql-query
+    - fusionpbx-app-traffic-graph
+    - freeswitch-mod-dingaling
+    - fusionpbx-app-xmpp
+    - fusionpbx-app-devices
+    - fusionpbx-app-provision
+    - fusionpbx-provisioning-template-aastra
+    - fusionpbx-provisioning-template-atcom
+    - fusionpbx-provisioning-template-cisco
+    - fusionpbx-provisioning-template-grandstream
+    - fusionpbx-provisioning-template-linksys
+    - fusionpbx-provisioning-template-panasonic
+    - fusionpbx-app-provision
+    - fusionpbx-provisioning-template-polycom
+    - fusionpbx-app-provision
+    - fusionpbx-provisioning-template-snom
+    - fusionpbx-provisioning-template-yealink
+    - fusionpbx-theme-accessible
+    - fusionpbx-theme-classic
+    - fusionpbx-theme-default
+    - fusionpbx-theme-minimized
+- name: Create provisioning templates directory
+  file: path=/etc/fusionpbx/resources/templates state=directory
+- name: Copy provisioning templates
+  command: creates=/etc/fusionpbx/resources/templates/provision cp -r /usr/share/examples/fusionpbx/resources/templates/provision /etc/fusionpbx/resources/templates/
+- name: restart nginx, php-fpm
+  service: name={{ item }} state=started
+  with_items:
+    - nginx
+    - php5-fpm
+- name: Install postgresql-server
+  apt: name={{ item }} state=installed
+  with_items:
+    - postgresql-9.3
+    - php5-pgsql
+    - python-psycopg2
+    - sudo
+    - curl
+- name: Create admin user
+  sudo: yes
+  sudo_user: postgres
+  postgresql_user: name={{ pgsql_admin }} password={{ lookup('password', 'credentials/' + inventory_hostname + '/pgsqlpassword') }} role_attr_flags=SUPERUSER
+- name: Configure FusionPBX via the web interface
+  command: creates=/etc/fusionpbx/config.php curl -o /tmp/fusionpbx-config.log -k -d 'db_host=localhost&db_port=5432&db_name={{ wui_name }}&db_username={{ pgsql_username }}&db_password={{ lookup('password') }}&db_create_username={{ pgsql_admin }}&db_create_password={{ lookup('password', 'credentials/' + inventory_hostname + '/pgsqlpassword') }}&db_type=pgsql&admin_username={{ default_username }}&admin_password={{ default_password }}&install_switch_base_dir=&install_tmp_dir=%2Ftmp&install_backup_dir=%2Ftmp&install_step=3&install_template_name=enhanced' https://localhost/resources/install.php
+- name: Install /etc/default/freeswitch
+  template: src=freeswitch_default.j2 dest=/etc/default/freeswitch
+- name: Restart freeswitch
+  service: name=freeswitch state=restarted
+- name: Linking moh dir so freeswitch can read in the moh files
+  file: src=/var/lib/fusionpbx/sounds/{{ item.src }} dest=/usr/share/freeswitch/sounds/{{ item.dest }} state=link
+  with_items:
+    - { src: 'music', dest: 'music/fusionpbx' }
+    - { src: 'custom', dest: '' }

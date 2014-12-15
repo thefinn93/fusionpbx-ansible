@@ -1,0 +1,12 @@
+CONFDIR="/etc/fusionpbx/switch/conf"
+fs_conf="/etc/fusionpbx/switch/conf"
+fs_db="/var/lib/freeswitch/db"
+fs_log="/var/log/freeswitch"
+fs_recordings="/var/lib/fusionpbx/recordings"
+fs_run="/var/run/freeswitch"
+fs_scripts="/var/lib/fusionpbx/scripts"
+fs_storage="/var/lib/fusionpbx/storage"
+fs_usr=freeswitch
+fs_grp=$fs_usr
+fs_options="-nc -rp"
+DAEMON_ARGS="-u $fs_usr -g $fs_grp -conf $fs_conf -db $fs_db -log $fs_log -scripts $fs_scripts -run $fs_run -storage $fs_storage -recordings $fs_recordings $fs_options"

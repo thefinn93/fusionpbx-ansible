@@ -1,0 +1,112 @@
+- name: Add FreeSWITCH repo
+  lineinfile: dest=/etc/apt/sources.list.d/freeswitch.list line="deb http://files.freeswitch.org/repo/deb/debian/ wheezy main" create=yes
+- name: Add the FreeSWITCH signing key
+  apt_key: id=25E010CF keyserver=keys.gnupg.net
+- name: Add the FusionPBX repo
+  lineinfile: dest=/etc/apt/sources.list.d/fusionpbx.list line="deb http://repo.fusionpbx.com/release/debian/ wheezy main" create=yes
+- name: Add the PostgreSQL repo
+  lineinfile: dest=/etc/apt/sources.list.d/pgsql-pgdg.list line="deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" create=yes
+- name: Add the PostgreSQL signing key
+  apt_key: id=ACCC4CF8 url=http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
+- name: Update and upgrade
+  apt: update_cache=yes upgrade=dist
+- name: Install depends
+  apt: name={{ item }} state=installed
+  with_items:
+    - ntp
+    - unixodbc
+    - uuid
+    - memcached
+    - libtiff5
+    - libtiff-tools
+    - time
+    - bison
+    - htop
+    - screen
+- name: Install FreeSWITCH
+  apt: name={{ item }} state=installed
+  with_items:
+    - freeswitch
+    - freeswitch-init
+    - freeswitch-meta-codecs
+    - freeswitch-mod-commands
+    - freeswitch-mod-curl
+    - freeswitch-mod-db
+    - freeswitch-mod-distributor
+    - freeswitch-mod-dptools
+    - freeswitch-mod-enum
+    - freeswitch-mod-esf
+    - freeswitch-mod-esl
+    - freeswitch-mod-expr
+    - freeswitch-mod-fsv
+    - freeswitch-mod-hash
+    - freeswitch-mod-memcache
+    - freeswitch-mod-portaudio
+    - freeswitch-mod-portaudio-stream
+    - freeswitch-mod-random
+    - freeswitch-mod-spandsp
+    - freeswitch-mod-spy
+    - freeswitch-mod-translate
+    - freeswitch-mod-valet-parking
+    - freeswitch-mod-flite
+    - freeswitch-mod-pocketsphinx
+    - freeswitch-mod-tts-commandline
+    - freeswitch-mod-dialplan-xml
+    - freeswitch-mod-loopback
+    - freeswitch-mod-sofia
+    - freeswitch-mod-event-multicast
+    - freeswitch-mod-event-socket
+    - freeswitch-mod-event-test
+    - freeswitch-mod-local-stream
+    - freeswitch-mod-native-file
+    - freeswitch-mod-sndfile
+    - freeswitch-mod-tone-stream
+    - freeswitch-mod-lua
+    - freeswitch-mod-console
+    - freeswitch-mod-logfile
+    - freeswitch-mod-syslog
+    - freeswitch-mod-say-en
+    - freeswitch-mod-posix-timer
+    - freeswitch-mod-timerfd
+    - freeswitch-mod-v8
+    - freeswitch-mod-xml-cdr
+    - freeswitch-mod-xml-curl
+    - freeswitch-mod-xml-rpc
+    - freeswitch-conf-vanilla
+    - freeswitch-mod-shout
+- name: Install en-us language files (more options coming eventually)
+  apt: name={{ item }} state=installed
+  with_items:
+    - freeswitch-lang-en
+    - freeswitch-mod-say-en
+    - freeswitch-sounds
+- name: Make the configuration directory
+  file: path={{ fs_conf_dir }} state=directory
+- name: Copy the default configuration
+  command: creates={{ fs_conf_dir }}/{{ item }} cp -rp {{ fs_dflt_conf_dir }}/vanilla/{{ item }} {{ fs_conf_dir }}
+  with_items:
+    - chatplan
+    - dialplan
+    - extensions.conf
+    - fur_elise.ttml
+    - jingle_profiles
+    - mime.types
+    - notify-voicemail.tpl
+    - skinny_profiles
+    - vars.xml
+    - web-vm.tpl
+    - autoload_configs
+    - config.FS0
+    - directory
+    - freeswitch.xml
+    - ivr_menus
+    - lang
+    - mrcp_profiles
+    - sip_profiles
+    - tetris.ttml
+    - voicemail.tpl
+    - yaml
+- name: Fix permissions on config
+  file: path={{ fs_conf_dir }} owner=freeswitch group=freeswitch recurse=yes
+- name: Restart freeswitch
+  service: name=freeswitch state=restarted

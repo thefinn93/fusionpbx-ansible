@@ -1,0 +1,35 @@
+- name: Install webserver and other fusionpbx depends
+  apt: name={{ item }} state=installed
+  with_items:
+    - sqlite3
+    - ssl-cert
+    - nginx
+    - php5-cli
+    - php5-common
+    - php-apc
+    - php5-gd
+    - php-db
+    - php5-fpm
+    - php5-memcache
+    - php5-sqlite
+- name: Increase max upload filesize
+  replace: dest={{ php_ini }} regexp="^upload_max_filesize = 2M" replace="upload_max_filesize = {{ max_upload_size }}"
+- name: Increase max POST size
+  replace: dest={{ php_ini }} regexp="^post_max_size = 8M" replace="post_max_size = {{ max_upload_size }}"
+- name: Install the FusionPBX nginx config
+  template: src=fusionpbx_nginx.j2 dest=/etc/nginx/sites-available/{{ wui_name }}
+- name: Monkey with core nginx settings for preformance
+  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+- name: Enable our vhost
+  file: src=/etc/nginx/sites-available/{{ wui_name }} dest=/etc/nginx/sites-enabled/{{ wui_name }} state=link
+- name: Disable default vhost
+  file: path=/etc/nginx/sites-enabled/default state=absent
+- name: restart nginx, php-fpm
+  service: name={{ item }} state=started
+  with_items:
+    - nginx
+    - php5-fpm
+- name: Add freeswitch to www-data group
+  user: name=freeswitch groups=www-data append=yes
+- name: Add www-data to freeswitch group
+  user: name=www-data groups=freeswitch append=yes
