@@ -15,8 +15,5 @@
     - php_ini: /etc/php5/fpm/php.ini
     - pgsql_admin: pgsqladmin
     - pgsql_username: fusionpbxadmin
-  tasks:
-    - include: roles/fusionpbx/tasks/freeswitch.yml
-    - include: roles/fusionpbx/tasks/web.yml
-    - include: roles/fusionpbx/tasks/fusionpbx.yml
-    - include: roles/fusionpbx/tasks/security.yml
+  roles:
+    - fusionpbx

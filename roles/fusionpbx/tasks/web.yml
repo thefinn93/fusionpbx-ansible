@@ -1,3 +1,9 @@
+- name: Add the PostgreSQL repo
+  lineinfile: dest=/etc/apt/sources.list.d/pgsql-pgdg.list line="deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" create=yes
+- name: Add the PostgreSQL signing key
+  apt_key: id=ACCC4CF8 url=http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
+- name: Update apt
+  apt: update_cache=yes
 - name: Install webserver and other fusionpbx depends
   apt: name={{ item }} state=installed
   with_items:

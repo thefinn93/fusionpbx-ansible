@@ -2,12 +2,6 @@
   lineinfile: dest=/etc/apt/sources.list.d/freeswitch.list line="deb http://files.freeswitch.org/repo/deb/debian/ wheezy main" create=yes
 - name: Add the FreeSWITCH signing key
   apt_key: id=25E010CF keyserver=keys.gnupg.net
-- name: Add the FusionPBX repo
-  lineinfile: dest=/etc/apt/sources.list.d/fusionpbx.list line="deb http://repo.fusionpbx.com/release/debian/ wheezy main" create=yes
-- name: Add the PostgreSQL repo
-  lineinfile: dest=/etc/apt/sources.list.d/pgsql-pgdg.list line="deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" create=yes
-- name: Add the PostgreSQL signing key
-  apt_key: id=ACCC4CF8 url=http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
 - name: Update and upgrade
   apt: update_cache=yes upgrade=dist
 - name: Install depends

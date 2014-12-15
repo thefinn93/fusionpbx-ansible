@@ -1,0 +1,4 @@
+- include: freeswitch.yml
+- include: web.yml
+- include: fusionpbx.yml
+- include: security.yml
