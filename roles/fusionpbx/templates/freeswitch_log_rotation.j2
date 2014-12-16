@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#number of days of logs to keep
+NUMBERDAYS="{{ keep_logs }}"
+FSPATH="/var/log/freeswitch"
+
+/usr/bin/freeswitch_cli -x "fsctl send_sighup" |grep '+OK' >/tmp/rotateFSlogs
+
+if [ $? -eq 0 ]; then
+       #-cmin 2 could bite us (leave some files uncompressed, eg 11M auto-rotate). Maybe -1440 is better?
+       find "$FSPATH" -name "freeswitch.log.*" -cmin -2 -exec gzip {} \;
+       find "$FSPATH" -name "freeswitch.log.*.gz" "-mtime" "+$NUMBERDAYS" -exec /bin/rm {} \;
+       chown freeswitch:freeswitch "$FSPATH"/freeswitch.log
+       chmod 664 "$FSPATH"/freeswitch.log
+       logger FreeSWITCH Logs rotated
+       rm /tmp/<<DELIM
+else
+       logger FreeSWITCH Log Rotation Script FAILED
+       mail -s '$HOST FS Log Rotate Error' root < /tmp/<<DELIM
+       rm /tmp/<<DELIM
+fi

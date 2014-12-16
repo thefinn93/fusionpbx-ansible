@@ -3,3 +3,31 @@
   with_items:
     - fail2ban
     - monit
+- name: Adding monit to keep freeswitch running
+  template: src=freeswitch_monit.j2 dest=/etc/monit/conf.d/freswitch
+  notify:
+    - restart monit
+- name: Install FreeSWITCH fail2ban filter
+  template: src=freeswitch_fail2ban_filter.j2 dest=/etc/fail2ban/filter.d/freeswitch.conf
+  notify:
+    - restart fail2ban
+- name: Install FreeSWITCH Denial Of Service fail2ban filter
+  template: src=freeswitch-dos_fail2ban_filter.j2 dest=/etc/fail2ban/filter.d/freeswitch-dos.conf
+  notify:
+    - restart fail2ban
+- name: Updating fail2ban jails
+  template: src=jail.local.j2 dest=/etc/fail2ban/jail.local
+  notify:
+    - restart fail2ban
+- name: Install FusionPBX fail2ban filter
+  template: src=fusionpbx_fail2ban_filter.j2 dest=/etc/fail2ban/filter.d/fusionpbx.conf
+  notify:
+    - restart fail2ban
+- name: Install FusionPBX Inbound fail2ban filter
+  template: src=fusionpbx-inbound_fail2ban_filter.j2 dest=/etc/fail2ban/filter.d/fusionpbx-inbound.conf
+  notify:
+    - restart fail2ban
+- name: Turning off RepeatedMsgReduction for rsyslog
+  replace: dest=/etc/rsyslog.conf regexp='RepeatedMsgReduction on' replace='RepeatedMsgReduction off'
+  notify:
+    - restart rsyslog

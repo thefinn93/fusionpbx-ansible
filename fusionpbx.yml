@@ -15,5 +15,6 @@
     - php_ini: /etc/php5/fpm/php.ini
     - pgsql_admin: pgsqladmin
     - pgsql_username: fusionpbxadmin
+    - keep_logs: 5
   roles:
     - fusionpbx

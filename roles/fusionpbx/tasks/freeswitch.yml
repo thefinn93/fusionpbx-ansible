@@ -104,3 +104,5 @@
   file: path={{ fs_conf_dir }} owner=freeswitch group=freeswitch recurse=yes
 - name: Restart freeswitch
   service: name=freeswitch state=restarted
+- name: Setup freeswitch log rotation
+  template: src=freeswitch_log_rotation.j2 dest=/etc/cron.daily/freeswitch_log_rotation

@@ -121,8 +121,3 @@
   template: src=freeswitch_default.j2 dest=/etc/default/freeswitch
 - name: Restart freeswitch
   service: name=freeswitch state=restarted
-- name: Linking moh dir so freeswitch can read in the moh files
-  file: src=/var/lib/fusionpbx/sounds/{{ item.src }} dest=/usr/share/freeswitch/sounds/{{ item.dest }} state=link
-  with_items:
-    - { src: 'music', dest: 'music/fusionpbx' }
-    - { src: 'custom', dest: '' }

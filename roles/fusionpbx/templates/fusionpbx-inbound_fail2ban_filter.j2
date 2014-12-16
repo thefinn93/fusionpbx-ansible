@@ -1,0 +1,21 @@
+# Fail2Ban configuration file
+# inbound route - 404 not found
+
+[Definition]
+
+# Option:  failregex
+# Notes.:  regex to match the password failures messages in the logfile. The
+#          host must be matched by a group named "host". The tag "<HOST>" can
+#          be used for standard IP/hostname matching and is only an alias for
+#          (?:::f{4,6}:)?(?P<host>[\w\-.^_]+)
+# Values:  TEXT
+#
+#failregex = [hostname] FusionPBX: \[<HOST>\] authentication failed
+#[hostname] variable doesn't seem to work in every case. Do this instead:
+failregex = 404 not found <HOST>
+
+# Option:  ignoreregex
+# Notes.:  regex to ignore. If this regex matches, the line is ignored.
+# Values:  TEXT
+#
+ignoreregex =
