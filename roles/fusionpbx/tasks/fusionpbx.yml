@@ -1,5 +1,5 @@
 - name: Add the FusionPBX repo
-  lineinfile: dest=/etc/apt/sources.list.d/fusionpbx.list line="deb http://repo.fusionpbx.com/release/debian/ wheezy main" create=yes
+  lineinfile: dest=/etc/apt/sources.list.d/fusionpbx.list line="deb http://repo.fusionpbx.com/fusionpbx/release/debian/ wheezy main" create=yes
 - name: Update apt
   apt: update_cache=yes
 - name: Install fusionpbx packages with --force because they're unsigned (we don't bother with that "security" crap)
