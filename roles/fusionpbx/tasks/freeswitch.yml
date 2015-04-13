@@ -1,5 +1,5 @@
 - name: Add FreeSWITCH repo
-  lineinfile: dest=/etc/apt/sources.list.d/freeswitch.list line="deb http://files.freeswitch.org/repo/deb/debian/ wheezy main" create=yes
+  lineinfile: dest=/etc/apt/sources.list.d/freeswitch.list line="deb http://files.freeswitch.org/repo/deb/debian/ {{ ansible_lsb.codename }} main" create=yes
 - name: Add the FreeSWITCH signing key
   apt_key: id=25E010CF keyserver=keys.gnupg.net
 - name: Update and upgrade
