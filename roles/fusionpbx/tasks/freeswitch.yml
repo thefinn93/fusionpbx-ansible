@@ -104,7 +104,5 @@
   template: src=freeswitch_default.j2 dest=/etc/default/freeswitch
   notify:
     - restart freeswitch
-- name: Restart freeswitch
-  service: name=freeswitch state=restarted
 - name: Setup freeswitch log rotation
   template: src=freeswitch_log_rotation.j2 dest=/etc/cron.daily/freeswitch_log_rotation
