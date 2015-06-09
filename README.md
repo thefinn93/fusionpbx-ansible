@@ -15,7 +15,7 @@ TODO
  - `freeswitch/astpp/astpp-fs-xml.cgi`
  - `freeswitch/astpp-callingcards.pl`
  - `freeswitch/astpp/astpp-cdr-xml.cgi`
-- [ ] Sounds are stored at {{ ASTPP_sounds_directory }} instead of `/usr/local/freeswitch/sounds/en/us/callie` and the following files need to be made aware of this change:
+- [ ] Sounds are stored at `{{ ASTPP_sounds_directory }}` instead of `/usr/local/freeswitch/sounds/en/us/callie` and the following files need to be made aware of this change:
  - `freeswitch/astpp-callingcards.pl`
  - `freeswitch/astpp/astpp-dialplan-xml.pl`
  - `astpp-2.0.sql` needs several updates, can possibly happen post-import
