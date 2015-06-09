@@ -116,7 +116,7 @@
   sudo_user: postgres
   postgresql_user: name={{ pgsql_admin }} password={{ lookup('password', 'credentials/' + inventory_hostname + '/pgsqlpassword') }} role_attr_flags=SUPERUSER
 - name: Configure FusionPBX via the web interface
-  command: creates=/etc/fusionpbx/config.php curl -o /tmp/fusionpbx-config.log -k -d 'db_host=localhost&db_port=5432&db_name={{ wui_name }}&db_username={{ pgsql_username }}&db_password={{ lookup('password') }}&db_create_username={{ pgsql_admin }}&db_create_password={{ lookup('password', 'credentials/' + inventory_hostname + '/pgsqlpassword') }}&db_type=pgsql&admin_username={{ default_username }}&admin_password={{ default_password }}&install_switch_base_dir=&install_tmp_dir=%2Ftmp&install_backup_dir=%2Ftmp&install_step=3&install_template_name=enhanced' https://localhost/resources/install.php
+  command: creates=/etc/fusionpbx/config.php curl -o /tmp/fusionpbx-config.log -k -d 'db_host=localhost&db_port=5432&db_name={{ wui_name }}&db_username={{ pgsql_username }}&db_password={{ lookup('password', 'credentials/' + inventory_hostname + '/pgsqlpassword') }}&db_create_username={{ pgsql_admin }}&db_create_password={{ lookup('password', 'credentials/' + inventory_hostname + '/pgsqlpassword') }}&db_type=pgsql&admin_username={{ default_username }}&admin_password={{ default_password }}&install_switch_base_dir=&install_tmp_dir=%2Ftmp&install_backup_dir=%2Ftmp&install_step=3&install_template_name=enhanced' https://localhost/resources/install.php
 - name: Install /etc/default/freeswitch
   template: src=freeswitch_default.j2 dest=/etc/default/freeswitch
 - name: Restart freeswitch
