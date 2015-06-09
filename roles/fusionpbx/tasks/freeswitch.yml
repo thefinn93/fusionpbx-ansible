@@ -15,8 +15,6 @@
     - libtiff-tools
     - time
     - bison
-    - htop
-    - screen
 - name: Install FreeSWITCH
   apt: name={{ item }} state=installed
   with_items:
@@ -73,7 +71,7 @@
   with_items:
     - freeswitch-lang-en
     - freeswitch-mod-say-en
-    - freeswitch-sounds
+    - freeswitch-sounds-en-us-callie
 - name: Make the configuration directory
   file: path={{ fs_conf_dir }} state=directory
 - name: Copy the default configuration
@@ -102,6 +100,10 @@
     - yaml
 - name: Fix permissions on config
   file: path={{ fs_conf_dir }} owner=freeswitch group=freeswitch recurse=yes
+- name: Tell Freeswitch to use FusionPBX's config folder instead of it's owner
+  template: src=freeswitch_default.j2 dest=/etc/default/freeswitch
+  notify:
+    - restart freeswitch
 - name: Restart freeswitch
   service: name=freeswitch state=restarted
 - name: Setup freeswitch log rotation
