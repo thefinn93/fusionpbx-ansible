@@ -4,6 +4,7 @@
   vars:
     - default_username: admin
     - default_password: admin
+    - freeswitch_user: freeswitch
     - max_upload_size: 25M
     - fs_conf_dir: /etc/freeswitch
     - fs_dflt_conf_dir: /usr/share/freeswitch/conf
