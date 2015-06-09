@@ -14,3 +14,12 @@
   - pgsql_admin: pgsqladmin
   - pgsql_username: fusionpbx
   - keep_logs: 5
+  - ASTPP_user: www-data
+  - ASTPP_group: www-data
+  - ASTPP_directory: /usr/src/ASTPP
+  - ASTPP_log_directory: /var/log/ASTPP
+  - ASTPP_exec_directory: /usr/local/astpp
+  - ASTPP_cgi_directory: /usr/lib/cgi-bin/astpp
+  - ASTPP_sounds_directory: /usr/local/astpp/sounds
+  - ASTPP_config_directory: /etc/astpp
+  - astpp_wui_name: astpp

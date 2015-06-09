@@ -1,0 +1,105 @@
+- name: Install ASTPP depends from apt
+  apt: name={{ item }} state=installed
+  with_items:
+    - php5
+    - php5-dev
+    - php5-common
+    - php5-cli
+    - php5-gd
+    - php-pear
+    - php5-cli
+    - php5-mysql
+    - php-apc
+    - php5-curl
+    - perl
+    - libxml2
+    - libxml2-dev
+    - openssl
+    - libcurl4-openssl-dev
+    - gettext
+    - libtool
+    - gcc
+    - cpanminus
+    - g++
+- name: Install ASTPP depends from CPAN
+  cpanm: name={{ item }}
+  with_items:
+    - Data::Dumper
+    - URI::Escape
+    - JSON
+    - POSIX
+    - DBI
+    - Time::HiRes
+    - DateTime::Format::Strptime
+    - XML::Simple
+    - CGI
+- name: Make some directories
+  file: name={{ item }} state=directory owner={{ ASTPP_user }} group={{ ASTPP_group }}
+  with_item:
+    - {{ ASTPP_directory }}
+    - {{ ASTPP_log_directory }}
+    - {{ ASTPP_exec_directory }}
+    - {{ ASTPP_cgi_directory }}
+    - {{ ASTPP_sounds_directory }}
+    - {{ ASTPP_config_directory }}
+    - "{{ www_path }}/{{ astpp_wui_name }}"
+- name: Clone the ASTPP source
+  git: repo=https://github.com/ASTPP/trunk dest={{ ASTPP_directory }}
+- name: Copy ASTPP perl files
+  synchronize: mode=pull src={{ ASTPP_directory }}/scripts/{{ item }} dest={{ ASTPP_exec_directory }}/{{ item }}
+  with_items:
+    - astpp-callingcard-functions.pl
+    - astpp-cdr.pl
+    - astpp-common.pl
+    - astpp-database.pl
+    - astpp-logger.pl
+    - astpp-xml.pl
+- name: Install the callingcards.pl FreeSWITCH script
+  synchronize: mode=pull src={{ ASTPP_directory }}/freeswitch/astpp-callingcards.pl dest={{ fs_scripts_dir }}/astpp-callingcards.pl
+- name: Install ASTPP sounds
+  synchronize: mode=pull scr={{ ASTPP_directory }}/sounds/{{ item }} dest={{ ASTPP_sounds_directory }}/{{ item }}
+  with_items:
+    - astpp-accountnum.wav
+    - astpp-badaccount.wav
+    - astpp-badnumber.wav
+    - astpp-badphone.wav
+    - astpp-callingcard-menu.wav
+    - astpp-card-has-expired.wav
+    - astpp-card-is-empty.wav
+    - astpp-cents.wav
+    - astpp-cent.wav
+    - astpp-connectcharge.wav
+    - astpp-credit.wav
+    - astpp-dollars.wav
+    - astpp-dollar.wav
+    - astpp-goodbye.wav
+    - astpp_expired.wav
+    - astpp-goodbye.wav
+    - astpp-invalidpin.wav
+    - astpp-minutes.wav
+    - astpp-minute.wav
+    - astpp-not-enough-credit.wav
+    - astpp-per.wav
+    - astpp-phonenum.wav
+    - astpp-pleasepin.wav
+    - astpp-point.wav
+    - astpp-register.wav
+    - astpp-second.wav
+    - astpp-seconds.wav
+    - astpp-this-call-will-last.wav
+    - astpp-this-card-has-a-balance-of.wav
+    - astpp-welcome.wav
+    - astpp-willapply.wav
+    - astpp-willcost.wav
+
+- name: Copy sample config in place if they don't already exist
+  command: cp {{ ASTPP_directory }}/astpp_confs/sample.astpp-config.conf {{ ASTPP_config_directory }}/astpp-config.conf creates={{ ASTPP_config_directory }}/astpp-config.conf
+
+- name: Install ASTPP web interface files
+  synchronize: mode=pull src={{ ASTPP_directory }}/web_interface/astpp/{{ item }} dest={{ www_path }}/{{ astpp_wui_name }}/{{ item }}
+  with_items:
+    - application
+    - assets
+    - cron
+    - system
+    - index.php
