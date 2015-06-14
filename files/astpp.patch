@@ -1,0 +1,1392 @@
+From b44798bac0eadc08d816b4ef7462f11667e2de45 Mon Sep 17 00:00:00 2001
+From: Finn <finn@finn.io>
+Date: Sat, 13 Jun 2015 22:41:49 -0700
+Subject: [PATCH] Fixed up stupid shit that doesnt use the base_url
+
+---
+ .../modules/accounts/libraries/accounts_form.php   |  80 +++++++-------
+ .../did/views/view_did_manage_reseller_add.php     |  57 +++++-----
+ .../modules/freeswitch/controllers/freeswitch.php  | 115 ++++++++++-----------
+ .../modules/reports/controllers/reports.php        |  89 ++++++++--------
+ .../reports/views/view_cdr_reseller_list.php       |  32 +++---
+ .../reports/views/view_customercdrs_list.php       |  32 +++---
+ .../modules/systems/views/view_currency_list.php   |  38 ++++---
+ .../modules/user/views/view_rates_list.php         |  22 ++--
+ 8 files changed, 229 insertions(+), 236 deletions(-)
+
+diff --git a/web_interface/astpp/application/modules/accounts/libraries/accounts_form.php b/web_interface/astpp/application/modules/accounts/libraries/accounts_form.php
+index 47c4e61..402dceb 100755
+--- a/web_interface/astpp/application/modules/accounts/libraries/accounts_form.php
++++ b/web_interface/astpp/application/modules/accounts/libraries/accounts_form.php
+@@ -10,7 +10,7 @@ class Accounts_form {
+      * @param array $field array of data for a field
+      * For generate random number using find_uniq_rendno(min no ,max no ,database field name which match the number if ,table name)
+      * action arguments['action,name,type'];
+-     * First key is Field set lagend name
++     * First key is Field set lagend name
+      * name Name of the field,
+      * type html field type and 3rd field is array of attribute
+      *  if select then 3rd field ,
+@@ -19,7 +19,7 @@ class Accounts_form {
+      * custom error message if exists
+      * if select type then add 4 arguments like below
+      * function name,id,name,tablename will fetch data
+-     * BUtton array which shows name, id , and also class attribute
++     * BUtton array which shows name, id , and also class attribute
+      */
+     function __construct($library_name = '') {
+         $this->CI = & get_instance();
+@@ -44,7 +44,7 @@ class Accounts_form {
+          if ($id > 0){
+ 	    $readable='disabled';
+             $val = 'accounts.email.' . $id;
+-
++
+         }else{
+             $val ='accounts.email';
+             if(common_model::$global_config['system_config']['opensips']== 1){
+@@ -70,7 +70,7 @@ class Accounts_form {
+             array('Number Translation', 'INPUT', array('name' => 'dialed_modify', 'size' => '20', 'maxlength' => '200', 'class' => "text field medium"), '', 'tOOL TIP', ''),
+              array('First Used', 'INPUT', array('name' => 'first_used', 'size' => '20', 'readonly' => true, 'maxlength' => '200', 'class' => "text field medium",'value'=>'0000-00-00 00:00:00'), '', 'tOOL TIP', ''),
+             array('Expiry Date', 'INPUT', array('name' => 'expiry', 'size' => '20', 'maxlength' => '200', 'class' => "text field medium",'value'=>$expiry_date,'id'=>'expiry'), '', 'tOOL TIP', ''),
+-            array('Valid Days', 'INPUT', array('name' => 'validfordays', 'size' => '20', 'maxlength' => '7', 'class' => "text field medium"), 'trim|numeric|min_length[1]|max_length[4]|xss_clean', 'tOOL TIP', ''),
++            array('Valid Days', 'INPUT', array('name' => 'validfordays', 'size' => '20', 'maxlength' => '7', 'class' => "text field medium"), 'trim|numeric|min_length[1]|max_length[4]|xss_clean', 'tOOL TIP', ''),
+             $sip_device,
+             $opensips_device
+         );
+@@ -101,13 +101,13 @@ class Accounts_form {
+             array('Credit Limit', 'INPUT', array('name' => 'credit_limit', 'size' => '20', 'maxlength' => '15', 'class' => "text field medium"), 'valid_decimal', 'tOOL TIP', ''),
+ 	      array('Tax','tax_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'taxes_description', 'taxes', 'build_dropdown', 'where_arr',array('status'=>0,"reseller_id" => $loginid), 'multi'),
+             );
+-
++
+
+         $form['Low Balance Alert Email'] = array(
+             array('Low Balance Alert Level', 'INPUT', array('name' => 'notify_credit_limit', 'size' => '20', 'maxlength' => '11', 'class' => "text field medium"), 'valid_decimal', 'tOOL TIP', ''),
+             array('Enable Email Alerts ?', 'notify_flag', 'SELECT', '', '', 'tOOL TIP', '', '', '', '', 'set_allow'),
+             array('Email Address', 'INPUT', array('name' => 'notify_email', 'size' => '50', 'maxlength' => '80', 'class' => "text field medium"), 'valid_email', 'tOOL TIP', ''),
+-        );
++        );
+         $form['button_save'] = array('name' => 'action', 'content' => 'Save', 'value' => 'save', 'type' => 'submit', 'class' => 'btn btn-line-parrot');
+         $form['button_cancel'] = array('name' => 'action', 'content' => 'Cancel', 'value' => 'cancel', 'type' => 'button', 'class' => 'btn btn-line-sky margin-x-10',  'onclick' => 'return redirect_page(\'/accounts/customer_list/\')');
+         return $form;
+@@ -131,10 +131,10 @@ class Accounts_form {
+         }
+         $form['forms'] = array(base_url().'accounts/customer_bulk_save/', array("id" => "customer_bulk_form", "name" => "customer_bulk_form"));
+         $form['General Details'] = array(
+-
+-            array('Customer Count', 'INPUT', array('name' => 'count', 'size' => '20', 'maxlength' => '5', 'class' => "text field medium"), 'trim|required|min_length[1]|max_length[5]|numeric|xss_clean', 'tOOL TIP', ''),
+-            array('Start prefix', 'INPUT', array('name' => 'prefix', 'size' => '20', 'maxlength' => '3', 'class' => "text field medium"), 'trim|required|min_length[1]|numeric|max_length[3]|xss_clean', 'tOOL TIP', ''),
+-            array('Account Length', 'INPUT', array('name' => 'account_length', 'size' => '20', 'maxlength' => '2', 'class' => "text field medium"), 'trim|required|min_length[1]|max_length[2]|numeric|xss_clean', 'tOOL TIP', ''),
++
++            array('Customer Count', 'INPUT', array('name' => 'count', 'size' => '20', 'maxlength' => '5', 'class' => "text field medium"), 'trim|required|min_length[1]|max_length[5]|numeric|xss_clean', 'tOOL TIP', ''),
++            array('Start prefix', 'INPUT', array('name' => 'prefix', 'size' => '20', 'maxlength' => '3', 'class' => "text field medium"), 'trim|required|min_length[1]|numeric|max_length[3]|xss_clean', 'tOOL TIP', ''),
++            array('Account Length', 'INPUT', array('name' => 'account_length', 'size' => '20', 'maxlength' => '2', 'class' => "text field medium"), 'trim|required|min_length[1]|max_length[2]|numeric|xss_clean', 'tOOL TIP', ''),
+             array('Company', 'INPUT', array('name' => 'company_name', 'maxlength' => '40', 'size' => '15', 'class' => 'text field medium'), 'trim|required|alpha_numeric_space|xss_clean', 'tOOL TIP', ''),
+              array('Country',array('name'=>'country_id','class'=>'country_id'), 'SELECT', '',array("name"=>"country_id","rules"=>"required"), 'tOOL TIP', 'Please Enter account number', 'id', 'country', 'countrycode', 'build_dropdown', '', ''),
+             array('Timezone',array('name'=>'timezone_id','class'=>'timezone_id'), 'SELECT', '', array("name"=>"timezone_id","rules"=>"required"), 'tOOL TIP', 'Please Enter account number', 'id', 'gmtzone', 'timezone', 'build_dropdown', '', ''),
+@@ -210,7 +210,7 @@ class Accounts_form {
+             array('Billing Schedule',array('name'=> 'sweep_id','class'=>'sweep_id'), 'SELECT', '', '', 'tOOL TIP', '', 'id', 'sweep', 'sweeplist', 'build_dropdown', '', ''),
+             array('Billing Day',array("name"=>'invoice_day',"class"=>"invoice_day"), 'SELECT', '', '', 'tOOL TIP', '', '', '', '', 'set_invoice_option'),
+              array('Currency',array('name'=>'currency_id','class'=>'currency_id'), 'SELECT', '',array("name"=>"currency_id","rules"=>"required"), 'tOOL TIP', 'Please Enter account number', 'id', 'currencyname,currency', 'currency', 'build_concat_dropdown', '', array()),
+-
++
+             array('Commission Rate in (%)', 'INPUT', array('name' => 'commission_rate', 'size' => '20', 'maxlength' => '11', 'class' => "text field medium"), '', 'tOOL TIP', ''),
+             array('Account Type',array('name' => 'posttoexternal', 'disabled' => $readable,'class' => 'posttoexternal', 'id' => 'posttoexternal'), 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', '', '', '', 'set_account_type'),
+ 	    array('Credit Limit', 'INPUT', array('name' => 'credit_limit', 'size' => '20', 'maxlength' => '15', 'class' => "text field medium"), '', 'tOOL TIP', ''),
+@@ -219,7 +219,7 @@ class Accounts_form {
+
+         $form['Reseller Profile'] = array(
+          //   array('Language', 'language_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'languagename', 'language', 'build_dropdown', '', ''),
+-
++
+             array('First Name', 'INPUT', array('name' => 'first_name', 'id' => 'first_name', 'size' => '50', 'maxlength' => '40', 'class' => "text field medium"), 'trim|required|max_length[20]|alpha_numeric|xss_clean', 'tOOL TIP', ''),
+             array('Last Name', 'INPUT', array('name' => 'last_name', 'size' => '15', 'maxlength' => '40', 'class' => "text field medium"), 'trim|alpha_dash|xss_clean', 'tOOL TIP', ''),
+ 	    array('Company', 'INPUT', array('name' => 'company_name', 'maxlength' => '40', 'size' => '50', 'class' => 'text field medium'), 'trim|alpha_numeric_space|xss_clean', 'tOOL TIP', ''),
+@@ -239,8 +239,8 @@ class Accounts_form {
+             array('Low Balance Alert Level', 'INPUT', array('name' => 'notify_credit_limit', 'size' => '20', 'maxlength' => '15', 'class' => "text field medium"), '', 'tOOL TIP', ''),
+             array('Enable Email Alerts ?', 'notify_flag', 'SELECT', '', '', 'tOOL TIP', '', '', '', '', 'set_allow'),
+             array('Email Address', 'INPUT', array('name' => 'notify_email', 'size' => '50', 'maxlength' => '100', 'class' => "text field medium"), 'valid_email', 'tOOL TIP', ''),
+-        );
+-
++        );
++
+         $form['button_cancel'] = array('name' => 'action', 'content' => 'Cancel', 'value' => 'cancel', 'type' => 'button', 'class' => 'btn btn-line-sky margin-x-10', 'onclick' => 'return redirect_page(\'/accounts/reseller_list/\')');
+         $form['button_save'] = array('name' => 'action', 'content' => 'Save', 'value' => 'save', 'type' => 'submit', 'class' => 'btn btn-line-parrot');
+
+@@ -266,7 +266,7 @@ class Accounts_form {
+
+         $form['Provider Profile'] = array(
+           //  array('Language', 'language_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'languagename', 'language', 'build_dropdown', '', ''),
+-
++
+             array('First Name', 'INPUT', array('name' => 'first_name', 'id' => 'first_name', 'size' => '25', 'maxlength' => '50', 'class' => "text field medium"), 'trim|required|max_length[20]|alpha_numeric|xss_clean', 'tOOL TIP', ''),
+             array('Last Name', 'INPUT', array('name' => 'last_name', 'size' => '15', 'maxlength' => '50', 'class' => "text field medium"), 'trim|alpha_dash|xss_clean', 'tOOL TIP', ''),
+ 	    array('Company', 'INPUT', array('name' => 'company_name', 'maxlength' => '150', 'size' => '50', 'class' => 'text field medium'), 'trim|alpha_numeric_space|xss_clean', 'tOOL TIP', ''),
+@@ -323,8 +323,8 @@ class Accounts_form {
+             array('Low Balance Alert Level', 'INPUT', array('name' => 'notify_credit_limit', 'size' => '20', 'maxlength' => '15', 'class' => "text field medium"), '', 'tOOL TIP', ''),
+             array('Enable Email Alerts ?', 'notify_flag', 'SELECT', '', '', 'tOOL TIP', '', '', '', '', 'set_allow'),
+             array('Email Address', 'INPUT', array('name' => 'notify_email', 'size' => '50', 'maxlength' => '100', 'class' => "text field medium"), 'valid_email', 'tOOL TIP', ''),
+-        );
+-
++        );
++
+         $form['button_cancel'] = array('name' => 'action', 'content' => 'Cancel', 'value' => 'cancel', 'type' => 'button', 'class' => 'btn btn-line-sky margin-x-10', 'onclick' => 'return redirect_page(\'/user/user/\')');
+         $form['button_save'] = array('name' => 'action', 'content' => 'Save', 'value' => 'save', 'type' => 'submit', 'class' => 'btn btn-line-parrot');
+
+@@ -360,15 +360,15 @@ class Accounts_form {
+             array('Low Balance Alert Level', 'INPUT', array('name' => 'notify_credit_limit', 'size' => '20', 'maxlength' => '15', 'class' => "text field medium"), '', 'tOOL TIP', ''),
+             array('Enable Email Alerts ?', 'notify_flag', 'SELECT', '', '', 'tOOL TIP', '', '', '', '', 'set_allow'),
+             array('Email Address', 'INPUT', array('name' => 'notify_email', 'size' => '50', 'maxlength' => '100', 'class' => "text field medium"), 'valid_email', 'tOOL TIP', ''),
+-        );
+-
++        );
++
+         $form['button_cancel'] = array('name' => 'action', 'content' => 'Cancel', 'value' => 'cancel', 'type' => 'button', 'class' => 'btn btn-line-sky margin-x-10', 'onclick' => 'return redirect_page(\'/dashboard/\')');
+         $form['button_save'] = array('name' => 'action', 'content' => 'Save', 'value' => 'save', 'type' => 'submit', 'class' => 'btn btn-line-parrot');
+
+         return $form;
+     }
+
+-
++
+     function get_form_admin_fields($entity_type = '') {
+         $uname = $this->CI->common->find_uniq_rendno($this->CI->config->item('size_number'), 'number', 'accounts');
+         $type= $entity_type == 'admin' ? 2 : 4;
+@@ -381,7 +381,7 @@ class Accounts_form {
+             );
+         $form[$entity_type.' Profile'] = array(
+           //  array('Language', 'language_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'languagename', 'language', 'build_dropdown', '', ''),
+-
++
+             array('First Name', 'INPUT', array('name' => 'first_name', 'id' => 'first_name', 'size' => '15', 'maxlength' => '40', 'class' => "text field medium"), 'trim|required|max_length[20]|alpha_numeric|xss_clean', 'tOOL TIP', 'Please Enter account number'),
+             array('Last Name', 'INPUT', array('name' => 'last_name', 'size' => '15', 'maxlength' => '40', 'class' => "text field medium"), 'trim|alpha_dash|xss_clean', 'tOOL TIP', 'Please Enter Password'),
+ 	    array('Company', 'INPUT', array('name' => 'company_name', 'maxlength' => '40', 'size' => '15', 'class' => 'text field medium'), 'trim|xss_clean', 'tOOL TIP', ''),
+@@ -416,7 +416,7 @@ class Accounts_form {
+             array('Password', 'PASSWORD', array('name' => 'password', 'size' => '20', 'maxlength' => '20', 'class' => "text field medium"), 'trim|required|min_length[5]|max_length[20]|xss_clean', 'tOOL TIP', 'Please Enter Password'));
+         $form['Subadmin Profile'] = array(
+           //  array('Language', 'language_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'languagename', 'language', 'build_dropdown', '', ''),
+-
++
+             array('First Name', 'INPUT', array('name' => 'first_name', 'id' => 'first_name', 'size' => '25', 'maxlength' => '40', 'class' => "text field medium"), 'trim|required|max_length[20]|alpha_numeric|xss_clean', 'tOOL TIP', 'Please Enter account number'),
+             array('Last Name', 'INPUT', array('name' => 'last_name', 'size' => '15', 'maxlength' => '40', 'class' => "text field medium"), 'trim|alpha_dash|xss_clean', 'tOOL TIP', 'Please Enter Password'),
+ 	    array('Company', 'INPUT', array('name' => 'company_name', 'maxlength' => '40', 'size' => '15', 'class' => 'text field medium'), 'trim|alpha_numeric_space|xss_clean', 'tOOL TIP', ''),
+@@ -441,16 +441,16 @@ class Accounts_form {
+         return $form;
+     }
+
+-
++
+     function get_search_customer_form() {
+         $form['forms'] = array("", array('id' => "account_search"));
+         $form['Search'] = array(
+-
++
+             array('Account', 'INPUT', array('name' => 'number[number]', '', 'size' => '20', 'class' => "text field "), '', 'tOOL TIP', '1', 'number[number-string]', '', '', '', 'search_string_type', ''),
+-
++
+             array('First Name', 'INPUT', array('name' => 'first_name[first_name]', '', 'id' => 'first_name', 'size' => '15', 'class' => "text field "), '', 'tOOL TIP', '1', 'first_name[first_name-string]', '', '', '', 'search_string_type', ''),
+             array('Last Name', 'INPUT', array('name' => 'last_name[last_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'last_name[last_name-string]', '', '', '', 'search_string_type', ''),
+-
++
+             array('Company', 'INPUT', array('name' => 'company_name[company_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'company_name[company_name-string]', '', '', '', 'search_string_type', ''),
+             array('Entity Type', 'type', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', '', '', '', 'set_entity_type_customer'),
+ 		array('Rate Group', 'pricelist_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'name', 'pricelists', 'build_dropdown', 'where_arr', array("status" => "0","reseller_id" => "0")),
+@@ -475,7 +475,7 @@ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+     function get_provider_search_form() {
+         $form['forms'] = array("", array('id' => "account_search"));
+         $form['Search'] = array(
+-
++
+             array('Account Number', 'INPUT', array('name' => 'number[number]', '', 'size' => '20', 'class' => "text field "), '', 'tOOL TIP', '1', 'number[number-string]', '', '', '', 'search_string_type', ''),
+             array('First Name', 'INPUT', array('name' => 'first_name[first_name]', '', 'id' => 'first_name', 'size' => '15', 'class' => "text field "), '', 'tOOL TIP', '1', 'first_name[first_name-string]', '', '', '', 'search_string_type', ''),
+             array('Last Name', 'INPUT', array('name' => 'last_name[last_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'last_name[last_name-string]', '', '', '', 'search_string_type', ''),
+@@ -493,9 +493,9 @@ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+       function get_reseller_search_form() {
+         $form['forms'] = array("", array('id' => "account_search"));
+         $form['Search'] = array(
+-
++
+             array('Account', 'INPUT', array('name' => 'number[number]', '', 'size' => '20', 'class' => "text field "), '', 'tOOL TIP', '1', 'number[number-string]', '', '', '', 'search_string_type', ''),
+-
++
+             array('First Name', 'INPUT', array('name' => 'first_name[first_name]', '', 'id' => 'first_name', 'size' => '15', 'class' => "text field "), '', 'tOOL TIP', '1', 'first_name[first_name-string]', '', '', '', 'search_string_type', ''),
+             array('Last Name', 'INPUT', array('name' => 'last_name[last_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'last_name[last_name-string]', '', '', '', 'search_string_type', ''),
+             array('Company', 'INPUT', array('name' => 'company_name[company_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'company_name[company_name-string]', '', '', '', 'search_string_type', ''),
+@@ -520,18 +520,18 @@ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+    function get_admin_search_form() {
+         $form['forms'] = array("", array('id' => "account_search"));
+         $form['Search'] = array(
+-
++
+             array('Account', 'INPUT', array('name' => 'number[number]', '', 'size' => '20', 'class' => "text field"), '', 'tOOL TIP', '1', 'number[number-string]', '', '', '', 'search_string_type', ''),
+-
++
+             array('First Name', 'INPUT', array('name' => 'first_name[first_name]', '', 'id' => 'first_name', 'size' => '15', 'class' => "text field "), '', 'tOOL TIP', '1', 'first_name[first_name-string]', '', '', '', 'search_string_type', ''),
+             array('Last Name', 'INPUT', array('name' => 'last_name[last_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'last_name[last_name-string]', '', '', '', 'search_string_type', ''),
+             array('Company', 'INPUT', array('name' => 'company_name[company_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'company_name[company_name-string]', '', '', '', 'search_string_type', ''),
+ 		array('Entity Type', 'type', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', '', '', '', 'set_entity_type_admin'),
+             array('Email', 'INPUT', array('name' => 'email[email]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'email[email-string]', '', '', '', 'search_string_type', ''),
+ 	 array('Phone', 'INPUT', array('name' => 'telephone_1[telephone_1]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'telephone_1[telephone_1-integer]', '', '', '', 'search_int_type', ''),
+-
++
+ 	    array('Country', 'country_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'country', 'countrycode', 'build_dropdown', '', ''),array('Status', 'status', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', '', '', '', 'set_search_status'),
+-
++
+           //  array('Currency', 'currency_id', 'SELECT', '', '', 'tOOL TIP', 'Please Enter account number', 'id', 'currencyname,currency', 'currency', 'build_concat_dropdown', '', array()),
+ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+             array('', 'HIDDEN', 'advance_search', '1', '', '', '')
+@@ -545,7 +545,7 @@ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+     function get_subadmin_search_form() {
+         $form['forms'] = array("", array('id' => "account_search"));
+         $form['Search'] = array(
+-
++
+             array('Account Number', 'INPUT', array('name' => 'number[number]', '', 'size' => '20', 'class' => "text field "), '', 'tOOL TIP', '1', 'number[number-string]', '', '', '', 'search_string_type', ''),
+             array('First Name', 'INPUT', array('name' => 'first_name[first_name]', '', 'id' => 'first_name', 'size' => '15', 'class' => "text field "), '', 'tOOL TIP', '1', 'first_name[first_name-string]', '', '', '', 'search_string_type', ''),
+             array('Last Name', 'INPUT', array('name' => 'last_name[last_name]', 'value' => '', 'size' => '20', 'class' => "text field "), '', 'Tool tips info', '1', 'last_name[last_name-string]', '', '', '', 'search_string_type', ''),
+@@ -711,7 +711,7 @@ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+         return $buttons_json;
+     }
+
+-
++
+
+     function build_ip_list_for_customer($accountid,$accountype) {
+ 	if($accountype == "customer"){
+@@ -759,11 +759,11 @@ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+
+     function set_block_pattern_action_buttons($id) {
+         $ret_url = '';
+-        $ret_url .= '<a href="/did/delete/' . $id . '/" class="icon delete_image" title="Delete" onClick="return get_alert_msg();">&nbsp;</a>';
++        $ret_url .= '<a href="'.base_uri().'/did/delete/' . $id . '/" class="icon delete_image" title="Delete" onClick="return get_alert_msg();">&nbsp;</a>';
+         return $ret_url;
+     }
+     function build_ipmap_for_user(){
+-
++
+             $grid_field_arr = json_encode(array(
+ 		array("Name","374", "name", "", "", ""),
+                 array("Address","360", "ip", "", "", ""),
+@@ -773,13 +773,13 @@ array('', 'HIDDEN', 'ajax_search', '1', '', '', ''),
+                 array("Action", "100", "", "", "", array("DELETE" => array("url" => "user/user_ipmap_action/delete/", "mode" => "single")))
+                     ));
+             return $grid_field_arr;
+-
++
+     }
+-
++
+         function build_animap_list() {
+         $grid_field_arr = json_encode(array(array("ANI", "180", "number", "", "", ""),
+             array("Context", "180", "context", "", "", ""),
+-            array("status","180","status","status","status","get_status"),
++            array("status","180","status","status","status","get_status"),
+ 	      array("Action", "130", "", "", "",
+ 	      array(
+ 	        "EDIT_ANIMAP" => array("url" => "accounts/callingcards_animap_list_edit/", "mode" => "single"),
+diff --git a/web_interface/astpp/application/modules/did/views/view_did_manage_reseller_add.php b/web_interface/astpp/application/modules/did/views/view_did_manage_reseller_add.php
+index 15e8f16..11165f5 100755
+--- a/web_interface/astpp/application/modules/did/views/view_did_manage_reseller_add.php
++++ b/web_interface/astpp/application/modules/did/views/view_did_manage_reseller_add.php
+@@ -1,4 +1,4 @@
+-<script type="text/javascript" src="/js/validate.js"></script>
++<script type="text/javascript" src="<?= base_url() ?>/js/validate.js"></script>
+
+ <script type="text/javascript">
+     $("#submit").click(function(){
+@@ -34,7 +34,7 @@
+ 	  </div>
+      </div>
+     </div>
+-  </div>
++  </div>
+ </section>
+
+
+@@ -42,44 +42,44 @@
+   <div>
+     <section class="slice color-three no-margin">
+         <div class="w-section inverse no-padding">
+-
+-
++
++
+
+         <form action="<?= base_url() ?><?= isset($did) ? "did/did_reseller_edit/edit" : "did/did_reseller_edit/add" ?>" id="frm_manage_did" method="POST" enctype="multipart/form-data">
+
+-            <ul class="padding-15">
++            <ul class="padding-15">
+                 <li class="col-md-8">
+                     <label class="col-md-3 no-padding">DID :</label>
+                         <input type="text" class="col-md-5 form-control" readonly name="note" value="<?= @$did ?>" />
+-
+-                </li>
++
++                </li>
+                <!-- <li class="col-md-8">
+                     <label class="col-md-3 no-padding">Country :</label>
+                     <input type="text" class="col-md-5 form-control" name="number" value="<?= @$reseller_didinfo['country'] ?>" />
+-                </li>
++                </li>
+
+                  <li class="col-md-8">
+-                    <label class="col-md-3 no-padding">Province :</label>
++                    <label class="col-md-3 no-padding">Province :</label>
+                     <input type="text" class="col-md-5 form-control" name="number" value="<?= @$reseller_didinfo['province'] ?>" />
+                 </li>
+
+                 <li class="col-md-8">
+                     <label class="col-md-3 no-padding">City :</label>
+                     <input type="text" class="col-md-5 form-control" name="number" value="<?= @$reseller_didinfo['city'] ?>" />
+-                </li>  -->
++                </li>  -->
+                  <!--<li class="col-md-8">
+                     <label class="col-md-3 no-padding">Provider :</label>
+                     <input type="text" class="col-md-5 form-control" name="number" value="<?= @$reseller_didinfo['provider_id'] ?>" />
+                 </li>-->
+
+               <!--  <li class="col-md-8">
+-                    <label class="col-md-3 no-padding">Account :</label>
++                    <label class="col-md-3 no-padding">Account :</label>
+                     <label class="col-md-5 form-control">
+                     if (//$reseller_didinfo['accountid'] == '0') {
+                         //echo "";
+                     //}
+-                   </label>
+-                </li> -->
++                   </label>
++                </li> -->
+                 <?//echo "<pre>";print_r($reseller_didinfo);echo "</pre>";?>
+ 	      <li class="col-md-8">
+                 <label class="col-md-3 no-padding">Call Type</label>
+@@ -101,32 +101,32 @@
+ 		      <label class="col-md-3 no-padding">Disconnection Fee:</label>
+ 		      <label class="value_bold">&nbsp;<?= @$reseller_didinfo['disconnectionfee'] ?></label>
+ 		      <input type="text" class="text field" name="disconnectionfee"  size="20"  value="<?= @$reseller_didinfo['disconnectionfee'] ?>" />
+-		  </li>   -->
++		  </li>   -->
+                  <li class="col-md-8">
+                     <label class="col-md-3 no-padding">Monthly Fee :</label>
+                     <input type="text" class="col-md-5 form-control" name="monthlycost" value="<?= @$reseller_didinfo['monthlycost'] ?>" />
+-                </li>
++                </li>
+                  <li class="col-md-8">
+                     <label class="col-md-3 no-padding">Connection Fee :</label>
+                     <input type="text" class="col-md-5 form-control" name="connectcost" value="<?= @$reseller_didinfo['connectcost'] ?>"/>
+-                </li>
++                </li>
+                  <li class="col-md-8">
+                     <label class="col-md-3 no-padding">Included Seconds :</label>
+                     <input type="text" class="col-md-5 form-control" name="includedseconds" value="<?= @$reseller_didinfo['includedseconds'] ?>"/>
+-                </li>
++                </li>
+                  <li class="col-md-8">
+                     <label class="col-md-3 no-padding">Cost :</label>
+                     <input type="text" class="col-md-5 form-control" name="cost" value="<?= @$reseller_didinfo['cost'] ?>"/>
+-                </li>
++                </li>
+                  <li class="col-md-8">
+                     <label class="col-md-3 no-padding">Increments :</label>
+                     <input type="text" class="col-md-5 form-control" name="inc" value="<?= @$reseller_didinfo['inc'] ?>"/>
+-                </li>
++                </li>
+
+
+                <!--  <li class="col-md-8">
+                     <label class="col-md-3 no-padding">Prorate :</label>
+-
++
+                     <select name="prorate" class="col-md-5 form-control" style="width:170px;" >
+                         <option value="1" <?php if (@$reseller_didinfo['prorate'] == "1") {
+                         echo "selected='selected'";
+@@ -140,19 +140,16 @@
+                  <!--<li class="col-md-8">
+                     <label class="col-md-3 no-padding">Dial As :</label>
+                     <input type="text" class="col-md-5 form-control" name="number" value="<?= @$did['reseller_didinfo'] ?>"/>
+-                </li> -->
+-            </ul>
++                </li> -->
++            </ul>
+ <center>
+            <div style="width:100%;float:left;height:50px;margin-top:20px;">
+-	 <input type="button" class="btn btn-line-parrot" id='submit' style="margin-left:5px;" name="action" value="<?= isset($did) ? "Save" : "Insert"; ?>" />
+-            <input type="button" onclick="location.href = '<?= base_url() ?>did/did_list/';" class="btn btn-line-sky margin-x-10" name="action" value="Cancel" />
+-
++	 <input type="button" class="btn btn-line-parrot" id='submit' style="margin-left:5px;" name="action" value="<?= isset($did) ? "Save" : "Insert"; ?>" />
++            <input type="button" onclick="location.href = '<?= base_url() ?>did/did_list/';" class="btn btn-line-sky margin-x-10" name="action" value="Cancel" />
++
+             </div></center>
+         </form>
+-       </div>
+-    </section>
++       </div>
++    </section>
+ <!--  </div>
+ </div>-->
+-
+-
+-
+diff --git a/web_interface/astpp/application/modules/freeswitch/controllers/freeswitch.php b/web_interface/astpp/application/modules/freeswitch/controllers/freeswitch.php
+index cd27a81..eb3b1fb 100755
+--- a/web_interface/astpp/application/modules/freeswitch/controllers/freeswitch.php
++++ b/web_interface/astpp/application/modules/freeswitch/controllers/freeswitch.php
+@@ -69,10 +69,10 @@ class Freeswitch extends MX_Controller {
+         $data['form'] = $this->form->build_form($this->freeswitch_form->fsdevice_form_fields_for_customer($accountid,$edit_id), $account);
+         $this->load->view('view_freeswitch_add_edit', $data);
+     }
+-
++
+     function fsgateway_search() {
+         $ajax_search = $this->input->post('ajax_search', 0);
+-
++
+         if ($this->input->post('advance_search', TRUE) == 1) {
+             $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
+             $action = $this->input->post();
+@@ -86,7 +86,7 @@ class Freeswitch extends MX_Controller {
+     }
+     function fssipprofile_search() {
+         $ajax_search = $this->input->post('ajax_search', 0);
+-
++
+         if ($this->input->post('advance_search', TRUE) == 1) {
+             $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
+             $action = $this->input->post();
+@@ -145,7 +145,7 @@ class Freeswitch extends MX_Controller {
+     }
+     function customer_fssipdevices_save($user_flg = false) {
+         $add_array = $this->input->post();
+-
++
+         if (!$user_flg) {
+             $data['form'] = $this->form->build_form($this->freeswitch_form->get_freeswith_form_fields(), $add_array);
+         } else {
+@@ -176,10 +176,10 @@ class Freeswitch extends MX_Controller {
+             }
+         }
+     }
+-
++
+
+     function user_fssipdevices_save($user_flg = false) {
+-
++
+         $add_array = $this->input->post();
+ //        print_r($add_array);
+ //        exit;
+@@ -216,7 +216,7 @@ class Freeswitch extends MX_Controller {
+         if ($this->input->post('advance_search', TRUE) == 1) {
+             $this->session->set_userdata('advance_search', $this->input->post('advance_search'));
+             $action = $this->input->post();
+-
++
+ //             print_r($action);
+ //             exit;
+             unset($action['action']);
+@@ -267,7 +267,7 @@ class Freeswitch extends MX_Controller {
+
+         echo json_encode($json_data);
+     }
+-
++
+     function fssipdevices_delete_multiple() {
+         $ids = $this->input->post("selected_ids", true);
+         $where = "id IN ($ids)";
+@@ -539,7 +539,7 @@ $tmp=null;
+ 		  echo json_encode(array("name_error"=> "Gateway name must not have any space."));
+ 		  exit;
+ 		}
+-        	$insert_arr['created_date']=gmdate('Y-m-d H:i:s');
++        	$insert_arr['created_date']=gmdate('Y-m-d H:i:s');
+                 $insert = $this->db->insert("gateways", $insert_arr);
+                 if ($insert) {
+                     $profile_name = $this->common->get_field_name('name', 'sip_profiles', $insert_arr['sip_profile_id']);
+@@ -615,24 +615,24 @@ $tmp=null;
+         $gateway_data = array();
+
+ 	$where = array('id' => $edited_id);
+-
++
+         $query = $this->db_model->getSelect("*", "sip_profiles", $where);
+         $query = $query->result_array();
+-
++
+         $gateway_result = array();
+         $i=0;
+         foreach ($query as $key => $query_value) {
+-
++
+
+             foreach ($query_value as $gateway_key => $gatewau_val) {
+ //             echo $gateway_key."---";
+ 	      if($gateway_key != 'id' && $gateway_key != 'name' && $gateway_key != 'sip_ip' && $gateway_key != 'sip_port'){
+-
++
+                 if ($gateway_key != "profile_data") {
+                     $gateway_data[$gateway_key] = $gatewau_val;
+                 } else {
+                     $tmp = (array) json_decode($gatewau_val);
+-
++
+                     $gateway_result = array_merge($gateway_data, $tmp);
+                 }
+ 	}
+@@ -640,21 +640,21 @@ $tmp=null;
+     }
+          $paging_data = $this->form->load_grid_config(count($gateway_result), $_GET['rp'], $_GET['page']);
+          $json_data = $paging_data["json_paging"];
+-
++
+ 	  foreach ($gateway_result as $key => $value) {
+ //       if($key != 'id' || $key != 'name' || $key != 'sip_ip' ||$key != 'sip_port'){
+ 	  $json_data['rows'][] = array('cell' => array(
+ 	      $key,
+ 	      $value,
+-	      array('<a href="/freeswitch/fssipprofile_edit/'.$edited_id.'/edit/' . $key .'/" class="btn btn-royelblue btn-sm"  title="Edit">&nbsp;<i class="fa fa-pencil-square-o fa-fw"></i></a>&nbsp;'
+-	      ,'<a href="/freeswitch/fssipprofile_delete_params/'.$edited_id.'/' . $key .'/" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_msg();">&nbsp;<i class="fa fa-trash fa-fw"></i></a>')
++	      array('<a href="'.base_url().'/freeswitch/fssipprofile_edit/'.$edited_id.'/edit/' . $key .'/" class="btn btn-royelblue btn-sm"  title="Edit">&nbsp;<i class="fa fa-pencil-square-o fa-fw"></i></a>&nbsp;'
++	      ,'<a href="'.base_url().'/freeswitch/fssipprofile_delete_params/'.$edited_id.'/' . $key .'/" class="btn btn-royelblue btn-sm" title="Delete" onClick="return get_alert_msg();">&nbsp;<i class="fa fa-trash fa-fw"></i></a>')
+ 	      ));
+   }
+         echo json_encode($json_data);
+     }
+      function fssipprofile_action($button_name,$id) {
+-
+-
++
++
+ //         echo 'sadvdsv';exit;
+ //         print_r($button_name);exit;
+         $where = array('id' => $id);
+@@ -665,10 +665,10 @@ $tmp=null;
+
+ //          echo "<pre>";print_r($gwdata);exit;
+         if($button_name == "start")
+-        {
+-
++        {
++
+            $cmd = "api sofia profile " . trim($query[0]['name']) ." start";
+-
++
+         }
+         elseif($button_name == "stop")
+         {
+@@ -681,14 +681,14 @@ $tmp=null;
+         elseif($button_name == "rescan")
+         {
+             $cmd = "api sofia profile " . trim($query[0]['name']) . " rescan";
+-
++
+         }
+-
++
+         $this->freeswitch_model->reload_freeswitch($cmd);
+-	redirect(base_url() . 'freeswitch/fssipprofile/');
++	redirect(base_url() . 'freeswitch/fssipprofile/');
+     }
+      function fssipprofile_add($add='') {
+-
++
+         $data['username'] = $this->session->userdata('user_name');
+         $data['flag'] = 'create';
+         $data['page_title'] = 'Add Sip Profile';
+@@ -698,11 +698,11 @@ $tmp=null;
+         $data['button_name']="Add Setting";
+         if($add == 'add')
+         {
+-
++
+ 	  unset($sipprofile_data['action']);
+ 	   unset($sipprofile_data['sipstatus']);
+ 	  $insert_data=$sipprofile_data;
+-
++
+ 	  if($sipprofile_data['name'] == '' || $sipprofile_data['sip_ip'] =='' || $sipprofile_data['sip_port'] =='')
+ 	  {
+ 	      $this->session->set_flashdata('astpp_notification', 'Please enter All profile value!');
+@@ -721,14 +721,14 @@ $tmp=null;
+  	    redirect(base_url() . 'freeswitch/fssipprofile_add/');
+  	    exit;
+ 	  }
+-
+
+-
++
++
+ 	  $sipprofile_data['id']='';
+ 	  $check_authentication = $this->freeswitch_model->profile_authentication($sipprofile_data);
+ 	  if ($check_authentication->num_rows == 0) {
+-
+-	      $sipprofile_data['created_date']=gmdate('Y-m-d H:i:s');
++
++	      $sipprofile_data['created_date']=gmdate('Y-m-d H:i:s');
+ 	      $insert = $this->db->insert("sip_profiles", $sipprofile_data);
+
+ 	    }
+@@ -738,14 +738,14 @@ $tmp=null;
+ 	    }
+ 	    redirect(base_url() . 'freeswitch/fssipprofile/');
+         }
+-
++
+         if($add == 'edit')
+         {
+-
++
+ // 	    echo "<pre>";
+ // 	    print_r($sipprofile_data);
+ // 	    exit;
+-
++
+ 	  $check_authentication = $this->freeswitch_model->profile_authentication($sipprofile_data);
+ 	    unset($sipprofile_data['action']);
+ 	    unset($sipprofile_data['sipstatus']);
+@@ -753,35 +753,35 @@ $tmp=null;
+ 	        if ($check_authentication->num_rows == 0) {
+                     $update = $this->db->update("sip_profiles", $insert_arr, array('id' => $sipprofile_data['id']));
+                     $this->session->set_flashdata('astpp_errormsg', $sipprofile_data['name']." SIP Profile Updated Successfully!");
+-                    redirect(base_url() . 'freeswitch/fssipprofile/');
++                    redirect(base_url() . 'freeswitch/fssipprofile/');
+                     exit;
+                 } else {
+                     $this->session->set_flashdata('astpp_notification', 'Duplicate SIP IP OR Port found it must be unique!');
+ 		    redirect(base_url() . 'freeswitch/fssipprofile/');
+                 }
+-	  redirect(base_url() . 'freeswitch/fssipprofile/');
++	  redirect(base_url() . 'freeswitch/fssipprofile/');
+         }
+         $this->load->view('view_fssipprofile_add', $data);
+     }
+
+
+     function fssipprofile_edit($edit_id = '',$type='',$name_prams='') {
+-
+-
++
++
+         $data['page_title'] = 'Edit Sip Profile';
+           $sipprofile_data = $this->input->post();
+-
++
+         if(!$edit_id)
+         {
+ 	  $edit_id=$sipprofile_data['id'];
+         }
+-
++
+         $where = array('id' => $edit_id);
+         $query = $this->db_model->getSelect("*", "sip_profiles", $where);
+         $query = $query->result_array();
+ //         echo $this->db->last_query();exit;
+         $gateway_result = array();
+-
++
+         foreach ($query as $key => $query_value) {
+             foreach ($query_value as $gateway_key => $gatewau_val) {
+                 if ($gateway_key != "profile_data") {
+@@ -793,18 +793,18 @@ $tmp=null;
+             }
+         }
+ //         $data['form'] = $this->form->build_form($this->freeswitch_form->get_sipprofile_form_fields(), $gateway_result);
+-
++
+         $data['grid_fields'] = $this->freeswitch_form->build_fssipprofile_params_list_for_admin();
+         $data['edited_id'] = $edit_id;
+-
++
+         $data['sip_name']=$query[0]['name'];
+ 	$data['status']=$query[0]['status'];
+ 	$data['sip_ip']= $query[0]['sip_ip'];
+ 	$data['sip_port']=$query[0]['sip_port'];
+ 	$data['id']=$query[0]['id'];
+         $data['button_name']="Add Setting";
+-
+-
++
++
+ //         echo "<pre>";print_r($sipprofile_data);exit;
+         if($type == 'edit' || isset($sipprofile_data['type']) && $sipprofile_data['type'] == 'save')
+         {
+@@ -835,7 +835,7 @@ $tmp=null;
+ 		    $this->session->set_flashdata('astpp_errormsg',$data['sip_name']. " SIP Setting Added Successfully!");
+                   }else{
+ 		    $this->session->set_flashdata('astpp_errormsg',$data['sip_name']. " SIP Setting Updated Successfully!");
+-
++
+                   }
+                   redirect(base_url() . 'freeswitch/fssipprofile_edit/'.$sipprofile_data['id']);
+ 		  exit;
+@@ -851,11 +851,11 @@ $tmp=null;
+ 	$sipprofile_data = $this->input->post();
+ 	$insert_arr = array();
+         $sipprofile_arr = array();
+-
++
+ // 	echo "<pre>";
+ // 	print_r($sipprofile_data);
+-
+-
++
++
+ 	$where = array('id' => $id);
+         $query = $this->db_model->getSelect("*", "sip_profiles", $where);
+         $query = $query->result_array();
+@@ -880,11 +880,11 @@ $tmp=null;
+ 	$insert_arr["profile_data"] = json_encode($tmp);
+ 	$update = $this->db->update("sip_profiles", $insert_arr, array('id' => $id));
+
+-
++
+ 	$this->load->view('view_fssipprofile_edit', $data);
+ // 	exit;
+     }
+-
++
+     function fssipprofile_delete_params($id,$name) {
+ 	$where = array('id' => $id);
+         $query = $this->db_model->getSelect("*", "sip_profiles", $where);
+@@ -907,16 +907,16 @@ $tmp=null;
+ // 	exit;
+ 	$insert_arr["profile_data"] = json_encode($tmp);
+ 	$update = $this->db->update("sip_profiles", $insert_arr, array('id' => $id));
+-
+-
+-
++
++
++
+ // 	$profile_name = $this->common->get_field_name('name', 'sip_profiles', $id);
+ //         $sip_ip = $this->common->get_field_name('sip_ip', 'sip_profiles', $id);
+-
++
+         $this->session->set_flashdata('astpp_notification', $name.' SIP Setting Removed Successfully!');
+         redirect(base_url() . 'freeswitch/fssipprofile_edit/'.$id);
+     }
+-
++
+     function fssipprofile_delete($profile_id) {
+ 	$profile_name = $this->common->get_field_name('name', 'sip_profiles', $profile_id);
+         $sip_ip = $this->common->get_field_name('sip_ip', 'sip_profiles', $profile_id);
+@@ -1036,4 +1036,3 @@ $tmp=null;
+ }
+
+ ?>
+-
+diff --git a/web_interface/astpp/application/modules/reports/controllers/reports.php b/web_interface/astpp/application/modules/reports/controllers/reports.php
+index 3a85539..c8128e9 100755
+--- a/web_interface/astpp/application/modules/reports/controllers/reports.php
++++ b/web_interface/astpp/application/modules/reports/controllers/reports.php
+@@ -66,7 +66,7 @@ class Reports extends MX_Controller {
+         $data['grid_fields'] = $this->reports_form->build_report_list_for_admin();
+         $data["grid_buttons"] = $this->reports_form->build_grid_buttons();
+         $data['form_search'] = $this->form->build_serach_form($this->reports_form->get_customer_cdr_form());
+-
++
+         $this->load->view('view_customercdrs_list', $data);
+     }
+
+@@ -108,7 +108,7 @@ class Reports extends MX_Controller {
+         $json_data = $paging_data["json_paging"];
+
+         $query = $this->reports_model->getreseller_list(true, $paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
+-//echo "<pre>"; print_r($query->result()); exit;
++//echo "<pre>"; print_r($query->result()); exit;
+         $grid_fields = json_decode($this->reports_form->build_report_list_for_reseller());
+         $json_data['rows'] = $this->form->build_grid($query, $grid_fields);
+
+@@ -186,9 +186,9 @@ class Reports extends MX_Controller {
+         $customer_array = array();
+         if ($this->session->userdata['logintype'] == 2) {
+ //             $customer_array[] = array("Date", "CallerID", "Called Number", "Account Number", "Bill Seconds", "Disposition", "Debit", "Cost", "Trunk", "Provider", "Pricelist", "Code", "Destination", "Call Type");
+-
++
+             $customer_array[] = array("Date", "CallerID", "Called Number","Code",  "Destination", "Bill Seconds","Debit", "Cost","Disposition", "Account Number",  "Trunk", "Rate Group",  "Call Type");
+-
++
+         } else {
+            $customer_array[] = array("Date", "CallerID", "Called Number","Code",  "Destination", "Bill Seconds","Debit", "Cost","Disposition", "Account Number",   "Rate Group",  "Call Type");
+         }
+@@ -244,10 +244,10 @@ class Reports extends MX_Controller {
+         if ($this->session->userdata['logintype'] == 2) {
+             $this->fpdf->tablewidths = array(20, 20, 16, 16, 10, 18, 13, 13, 16, 14, 12, 10, 15);
+ //             $customer_array[] = array("Date", "CallerID", "Called Number", "Account Number", "BillSec", "Dispo.", "Debit", "Cost", "Trunk", "Provider", "Pricelist", "Code", "Destination", "Call Type");
+-
+-
++
++
+              $customer_array[] = array("Date", "CallerID", "Called Number","Code",  "Destination", "Bill Seconds","Debit", "Cost","Disposition", "Account Number",  "Trunk", "Rate Group",  "Call Type");
+-
++
+         } else {
+             $this->fpdf->tablewidths = array(22, 24, 20, 18, 10, 27, 13, 13, 14, 13, 15, 16);
+           $customer_array[] = array("Date", "CallerID", "Called Number","Code",  "Destination", "Bill Seconds","Debit", "Cost","Disposition", "Account Number",   "Rate Group",  "Call Type");
+@@ -346,7 +346,7 @@ class Reports extends MX_Controller {
+             $this->fpdf->tablewidths = array(22, 24, 20, 18, 10, 27, 13, 13, 14, 13, 15, 16);
+         $customer_array[] = array("Date", "CallerID", "Called Number","Code",  "Destination", "Bill Seconds","Debit", "Cost","Disposition", "Account Number",   "Rate Group",  "Call Type");
+         }
+-
++
+         if ($query->num_rows() > 0) {
+
+             foreach ($query->result_array() as $row) {
+@@ -503,12 +503,12 @@ class Reports extends MX_Controller {
+         $this->load->view('view_customersummary_report', $data);
+     }
+     function customersummary_json() {
+-        $json_data = array();
++        $json_data = array();
+         $count_all = $this->reports_model->get_customersummary_report_list(false,0,0);
+         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
+         $json_data = $paging_data["json_paging"];
+         $query1 =$this->reports_model->get_customersummary_report_list(true,$paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
+-
++
+         if ($query1->num_rows() > 0) {
+             foreach ($query1->result_array() as $row1) {
+                 $atmpt = $row1['attempts'];
+@@ -529,14 +529,14 @@ class Reports extends MX_Controller {
+                     $cmplt,
+                     round($asr, 2),
+                     round($acd/60, 2),
+-                    round($mcd/60, 2),
+-                    round($bill/60, 2),
++                    round($mcd/60, 2),
++                    round($bill/60, 2),
+                     $this->common_model->calculate_currency($cost),
+                     $this->common_model->calculate_currency($row1["price"]),
+                     $this->common_model->calculate_currency($profit)));
+                 }
+         }
+-        echo json_encode($json_data);
++        echo json_encode($json_data);
+     }
+       function customersummary_search() {
+         $ajax_search = $this->input->post('ajax_search', 0);
+@@ -593,14 +593,14 @@ class Reports extends MX_Controller {
+                     $cmplt,
+                     round($asr, 2),
+                     round($acd/60, 2),
+-                    round($mcd/60, 2),
+-                    round($bill/60, 2),
++                    round($mcd/60, 2),
++                    round($bill/60, 2),
+                     $this->common_model->calculate_currency($row1["price"]),
+                     $this->common_model->calculate_currency($cost),
+                     $this->common_model->calculate_currency($profit)));
+                 }
+         }
+-        echo json_encode($json_data);
++        echo json_encode($json_data);
+       }
+       function resellersummary_search() {
+         $ajax_search = $this->input->post('ajax_search', 0);
+@@ -633,7 +633,7 @@ class Reports extends MX_Controller {
+         $count_all=$this->reports_model->get_providersummary_report_list(false,0,0);
+         $paging_data = $this->form->load_grid_config($count_all, $_GET['rp'], $_GET['page']);
+         $json_data = $paging_data["json_paging"];
+-        $query1=$this->reports_model->get_providersummary_report_list(true,$paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
++        $query1=$this->reports_model->get_providersummary_report_list(true,$paging_data["paging"]["start"], $paging_data["paging"]["page_no"]);
+         if ($query1->num_rows() > 0) {
+             foreach ($query1->result_array() as $row1) {
+                 $atmpt = $row1['attempts'];
+@@ -653,15 +653,15 @@ class Reports extends MX_Controller {
+                     $cmplt,
+                     round($asr, 2),
+                     round($acd/60, 2),
+-                    round($mcd/60, 2),
+-                    round($bill/60, 2),
++                    round($mcd/60, 2),
++                    round($bill/60, 2),
+                     $this->common_model->calculate_currency($cost),
+ //                    $this->common_model->calculate_currency($profit)
+                     ));
+
+                 }
+         }
+-        echo json_encode($json_data);
++        echo json_encode($json_data);
+     }
+     function providersummary_search() {
+         $ajax_search = $this->input->post('ajax_search', 0);
+@@ -838,7 +838,7 @@ class Reports extends MX_Controller {
+         $this->session->set_userdata('advance_search', 0);
+         $this->session->set_userdata('reseller_commission_search', "");
+     }
+-
++
+      function userReport_export_cdr_xls() {
+         $query = $this->reports_model->getcustomercdrs(true, '', '', false);
+         $customer_array = array();
+@@ -847,7 +847,7 @@ class Reports extends MX_Controller {
+         if ($query->num_rows() > 0) {
+
+             foreach ($query->result_array() as $row) {
+-
++
+                     $customer_array[] = array(
+                         $row['callstart'],
+                         $row['callerid'],
+@@ -877,7 +877,7 @@ class Reports extends MX_Controller {
+         if ($query->num_rows() > 0) {
+
+             foreach ($query->result_array() as $row) {
+-
++
+                     $customer_array[] = array(
+                         $row['callstart'],
+                         $row['callerid'],
+@@ -907,7 +907,7 @@ class Reports extends MX_Controller {
+         $this->fpdf->Output('Customer_CDR_' . date("Y-m-d") . '.pdf', "D");
+     }
+     function customer_traffic_summary_json(){
+-
++
+         $json_data = array();$total_duration=0;
+         $count_all = $this->reports_model->get_traffic_list(false, "", "");
+        // echo "<pre>";print_r($count_all);exit;
+@@ -921,7 +921,7 @@ class Reports extends MX_Controller {
+ // 	    echo 'sdvdsv';
+             $query_calls = $this->db_model->getSelect('count(*) as answerd_call,sum(billseconds) as total_calls', "cdrs", array('disposition'=>'NORMAL_CLEARING',"reseller_id" => "0"));
+         }
+-
++
+       //echo $this->db->last_query();exit;
+         if($query_calls->num_rows > 0){
+             $result1=$query_calls->result_array();
+@@ -955,22 +955,22 @@ class Reports extends MX_Controller {
+              $first[$key]['answer_call']=0;
+             foreach($calls as $ans_key => $ans_val){
+                 if(date("Y-m-d", strtotime($ans_val['callstart'])) == date("Y-m-d", strtotime($value['callstart']))){
+-
++
+                     $first[$key]['answer_call']=$ans_val['answerd_call'];
+ 		}
+             }
+-
++
+ //		$total_duration=$total_duration + $value['duration'];
+
+ //                $per=$value['calls'] * 200 / $total;
+ //                $margin = $value['profit'] * 100 / $profit_total;
+ //                $asr=  $first[$key]['answer_call'] * 100 / $total_answeredcall;
+ //                $aloc=$value['duration'] * 100 / $total;
+-
++
+
+                  if($total !=0 ){
+                     $per=$value['calls'] * 200 / $total;
+-
++
+                 }
+ //                    $margin = $value['profit'] * 100 / $profit_total;
+ 			@$margin=((($value['sell_rate'] - $value['buy_rate'])/$value['sell_rate'])) * 100;
+@@ -1006,9 +1006,9 @@ class Reports extends MX_Controller {
+                 $toal_per=$json_data['rows'][] = array('cell' => array(
+                         $value['callstart'],
+                         $this->get_seconds_to_time($value['duration']),
+-                        '<img alt="progress_animated" src="/assets/images/progress_animated.gif" width="'.$per.'" height="35px;" style="margin-top:-8px;float:left;margin-left:-10px;"></img>',
++                        '<img alt="progress_animated" src="'.base_url().'/assets/images/progress_animated.gif" width="'.$per.'" height="35px;" style="margin-top:-8px;float:left;margin-left:-10px;"></img>',
+                         $value['calls'],
+-                        number_format($asr,2)."%",
++                        number_format($asr,2)."%",
+                         $aloc,
+                         number_format($value['sell_rate'],2)." ".$to_currency,
+                         number_format($value['buy_rate'],2)." ".$to_currency,
+@@ -1017,7 +1017,7 @@ class Reports extends MX_Controller {
+ //                        $this->common->convert_to_currency($value['profit'],'','',true,false),
+                      ));
+         }
+-
++
+ //		echo "---------".$total_duration;
+
+         @$json_data['rows'][count($json_data['rows'])]=array('cell' => array('<b>Total</b>','<b>'.$this->get_seconds_to_time($total_duration).'</b>','','<b>'.$total.'</b>','<b>'.number_format($asr_total,2)."%</b>",
+@@ -1045,10 +1045,10 @@ class Reports extends MX_Controller {
+       }
+
+ function customersummary_export_cdr_xls() {
+-
++
+ $query = $this->reports_model->get_customersummary_report_list(true, '', '', true);
+         $customer_array[] = array("User", "Code", "Destination","Attempted Calls",  "Completed Calls", "ASR","ACD", "MCD","Bilable", "Debit",  "Cost", "Profit");
+-
++
+         if ($query->num_rows() > 0) {
+
+              foreach ($query->result_array() as $row1) {
+@@ -1070,8 +1070,8 @@ $query = $this->reports_model->get_customersummary_report_list(true, '', '', tru
+                     $cmplt,
+                     round($asr, 2),
+                     round($acd/60, 2),
+-                    round($mcd/60, 2),
+-                    round($bill/60, 2),
++                    round($mcd/60, 2),
++                    round($bill/60, 2),
+                     $this->common_model->calculate_currency($cost),
+                     $this->common_model->calculate_currency($row1["price"]),
+                     $this->common_model->calculate_currency($profit));
+@@ -1082,10 +1082,10 @@ $query = $this->reports_model->get_customersummary_report_list(true, '', '', tru
+     }
+
+ function resellersummary_export_cdr_xls() {
+-
++
+ $query = $this->reports_model->get_resellersummary_report(true, '', '', true);
+         $customer_array[] = array("User", "Code", "Destination","Attempted Calls",  "Completed Calls", "ASR","ACD", "MCD","Bilable", "Debit",  "Cost", "Profit");
+-
++
+         if ($query->num_rows() > 0) {
+
+              foreach ($query->result_array() as $row1) {
+@@ -1107,8 +1107,8 @@ $query = $this->reports_model->get_resellersummary_report(true, '', '', true);
+                     $cmplt,
+                     round($asr, 2),
+                     round($acd/60, 2),
+-                    round($mcd/60, 2),
+-                    round($bill/60, 2),
++                    round($mcd/60, 2),
++                    round($bill/60, 2),
+                     $this->common_model->calculate_currency($row1["price"]),
+                     $this->common_model->calculate_currency($cost),
+                     $this->common_model->calculate_currency($profit));
+@@ -1119,10 +1119,10 @@ $query = $this->reports_model->get_resellersummary_report(true, '', '', true);
+     }
+
+ function providersummary_export_cdr_xls() {
+-
++
+ $query = $this->reports_model->get_providersummary_report_list(true, '', '', true);
+         $customer_array[] = array("Provider", "Code", "Destination","Attempted Calls",  "Completed Calls", "ASR","ACD", "MCD","Bilable" , "Cost");
+-
++
+         if ($query->num_rows() > 0) {
+
+              foreach ($query->result_array() as $row1) {
+@@ -1143,8 +1143,8 @@ $query = $this->reports_model->get_providersummary_report_list(true, '', '', tru
+                     $cmplt,
+                     round($asr, 2),
+                     round($acd/60, 2),
+-                    round($mcd/60, 2),
+-                    round($bill/60, 2),
++                    round($mcd/60, 2),
++                    round($bill/60, 2),
+                     $this->common_model->calculate_currency($cost)
+ //                    $this->common_model->calculate_currency($profit)
+                     );
+@@ -1162,4 +1162,3 @@ $query = $this->reports_model->get_providersummary_report_list(true, '', '', tru
+ }
+
+ ?>
+-
+diff --git a/web_interface/astpp/application/modules/reports/views/view_cdr_reseller_list.php b/web_interface/astpp/application/modules/reports/views/view_cdr_reseller_list.php
+index 6bb5615..205ff96 100755
+--- a/web_interface/astpp/application/modules/reports/views/view_cdr_reseller_list.php
++++ b/web_interface/astpp/application/modules/reports/views/view_cdr_reseller_list.php
+@@ -2,13 +2,13 @@
+ <? startblock('extra_head') ?>
+ <script type="text/javascript" language="javascript">
+     $(document).ready(function() {
+-
++
+         build_grid("cdr_reseller_grid","",<? echo $grid_fields; ?>,<? echo $grid_buttons; ?>);
+-
++
+         $("#reseller_cdr_search_btn").click(function(){
+-
++
+             post_request_for_search("cdr_reseller_grid","","cdr_reseller_search");
+-        });
++        });
+         $("#id_reset").click(function(){
+             clear_search_request("cdr_reseller_grid","");
+         });
+@@ -16,19 +16,19 @@
+ </script>
+ <script>
+        $(document).ready(function() {
+-        var currentdate = new Date();
++        var currentdate = new Date();
+         var datetime = currentdate.getFullYear() + "-"
+-            + ('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
++            + ('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
+                 + currentdate.getDate() + " 00:00:01";
+-
++
+         var datetime1 = currentdate.getFullYear() + "-"
+-           +('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
++           +('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
+             + currentdate.getDate() + " 23:59:59"
+
+-        $("#customer_cdr_from_date").val(datetime);
++        $("#customer_cdr_from_date").val(datetime);
+         $("#customer_cdr_to_date").val(datetime1);
+-        $("#customer_cdr_from_date").datetimepicker({ dateFormat: 'yy-mm-dd' });
+-        $("#customer_cdr_to_date").datetimepicker({ dateFormat: 'yy-mm-dd' });
++        $("#customer_cdr_from_date").datetimepicker({ dateFormat: 'yy-mm-dd' });
++        $("#customer_cdr_to_date").datetimepicker({ dateFormat: 'yy-mm-dd' });
+     });
+ </script>
+ <? endblock() ?>
+@@ -37,7 +37,7 @@
+ <?= $page_title ?><br/>
+ <? endblock() ?>
+
+-<? startblock('content') ?>
++<? startblock('content') ?>
+ <section class="slice color-three">
+ 	<div class="w-section inverse no-padding">
+     	<div class="container">
+@@ -54,11 +54,11 @@
+ 	<div class="w-section inverse no-padding">
+     	<div class="container">
+         	<div class="row">
+-                <div class="col-md-12">
++                <div class="col-md-12">
+                         <form method="POST" action="del/0/" enctype="multipart/form-data" id="ListForm">
+                             <table id="cdr_reseller_grid" align="left" style="display:none;"></table>
+                         </form>
+-                </div>
++                </div>
+             </div>
+         </div>
+     </div><!--<br/>
+@@ -69,5 +69,5 @@
+ </section>
+
+
+-<? endblock() ?>
+-<? end_extend() ?>
++<? endblock() ?>
++<? end_extend() ?>
+diff --git a/web_interface/astpp/application/modules/reports/views/view_customercdrs_list.php b/web_interface/astpp/application/modules/reports/views/view_customercdrs_list.php
+index 4683c38..529bbb0 100755
+--- a/web_interface/astpp/application/modules/reports/views/view_customercdrs_list.php
++++ b/web_interface/astpp/application/modules/reports/views/view_customercdrs_list.php
+@@ -2,30 +2,30 @@
+ <? startblock('extra_head') ?>
+ <script type="text/javascript" language="javascript">
+     $(document).ready(function() {
+-
++
+         build_grid("configuration_grid","",<? echo $grid_fields; ?>,<? echo $grid_buttons; ?>);
+-
++
+         $("#cusotmer_cdr_search_btn").click(function(){
+             post_request_for_search("configuration_grid","","cdr_customer_search");
+-        });
++        });
+         $("#id_reset").click(function(){
+             clear_search_request("configuration_grid","");
+         });
+-
++
+     });
+ </script>
+ <script>
+        $(document).ready(function() {
+-        var currentdate = new Date();
++        var currentdate = new Date();
+         var datetime = currentdate.getFullYear() + "-"
+-            + ('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
++            + ('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
+                 + currentdate.getDate() + " 00:00:01";
+-
++
+         var datetime1 = currentdate.getFullYear() + "-"
+-           +('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
++           +('0' + (currentdate.getMonth()+1)).slice(-2) + "-"
+             + currentdate.getDate() + " 23:59:59"
+
+-        $("#customer_cdr_from_date").val(datetime);
++        $("#customer_cdr_from_date").val(datetime);
+         $("#customer_cdr_to_date").val(datetime1);
+     });
+ </script>
+@@ -35,7 +35,7 @@
+ <?= $page_title ?><br/>
+ <? endblock() ?>
+
+-<? startblock('content') ?>
++<? startblock('content') ?>
+
+ <section class="slice color-three">
+ 	<div class="w-section inverse no-padding">
+@@ -53,20 +53,20 @@
+ 	<div class="w-section inverse no-padding">
+     	<div class="container">
+         	<div class="row">
+-                <div class="col-md-12">
++                <div class="col-md-12">
+                         <form method="POST" action="del/0/" enctype="multipart/form-data" id="ListForm">
+                             <table id="configuration_grid" align="left" style="display:none;"></table>
+                         </form>
+-                </div>
++                </div>
+             </div>
+         </div>
+     </div><!--<br/>
+ <div class="pull-right padding-r-20">
+-      <a class="btn-tw btn" href="/reports/customerReport_export_cdr_xls"><i class="fa fa-file-excel-o fa-lg"></i>Export CSV</a>
+-      <a class="btn-xing btn" href="/reports/customerReport_export_cdr_pdf"><i class="fa fa-file-pdf-o fa-lg"></i>Export PDF</a>
++      <a class="btn-tw btn" href="'.base_url().'/reports/customerReport_export_cdr_xls"><i class="fa fa-file-excel-o fa-lg"></i>Export CSV</a>
++      <a class="btn-xing btn" href="'.base_url().'/reports/customerReport_export_cdr_pdf"><i class="fa fa-file-pdf-o fa-lg"></i>Export PDF</a>
+ </div><br/><br/> -->
+ </section>
+
+
+-<? endblock() ?>
+-<? end_extend() ?>
++<? endblock() ?>
++<? end_extend() ?>
+diff --git a/web_interface/astpp/application/modules/systems/views/view_currency_list.php b/web_interface/astpp/application/modules/systems/views/view_currency_list.php
+index 588a435..e8181ba 100755
+--- a/web_interface/astpp/application/modules/systems/views/view_currency_list.php
++++ b/web_interface/astpp/application/modules/systems/views/view_currency_list.php
+@@ -4,19 +4,19 @@
+
+ <script type="text/javascript" language="javascript">
+     $(document).ready(function() {
+-
++
+         build_grid("currency_grid","",<? echo $grid_fields; ?>,<? echo $grid_buttons; ?>);
+         $('.checkall').click(function () {
+             $('.chkRefNos').attr('checked', this.checked); //if you want to select/deselect checkboxes use this
+         });
+         $("#currency_search_btn").click(function(){
+-
++
+             post_request_for_search("currency_grid","","currency_search");
+-        });
+-        $("#id_reset").click(function(){
++        });
++        $("#id_reset").click(function(){
+             clear_search_request("currency_grid","");
+         });
+-
++
+     });
+ </script>
+ <? endblock() ?>
+@@ -25,9 +25,9 @@
+ <?= $page_title ?><br/>
+ <? endblock() ?>
+
+-<? startblock('content') ?>
+-<style>
+-
++<? startblock('content') ?>
++<style>
++
+ .pure-button-primary {
+ /*	color:blue;height:25px;width:150px;background-color: rgb(0, 120, 231);color:white;*/
+ 	width:140px;color:#fff; background-color:#79C447; border-radius:4px; font-family:arial; text-align:center;box-shadow:0px 1px 1px #406826;padding:5px 5px 5px 5px;border:2px #63a139;cursor:pointer;font-family: 'Lato', sans-serif;
+@@ -51,13 +51,13 @@
+ 	<div class="w-section inverse no-padding">
+     	<div class="container">
+         	<div class="row">
+-	          <div class="col-md-12">
++	          <div class="col-md-12">
+           	  <div style="float:right;">
+-			<a href="/currency_update/update_currency/" style="text-decoration:none;">
++			<a href="<?= base_url() ?>/currency_update/update_currency/" style="text-decoration:none;">
+ 				<input type="button" name="update_currency" id="update_currency" class="pure-button-primary" value="UPDATE CURRENCY" />
+ 			</a>
+-		</div>
+-                </div>
++		</div>
++                </div>
+             </div>
+         </div>
+     </div>
+@@ -67,21 +67,19 @@
+ 	<div class="w-section inverse no-padding">
+     	<div class="container">
+         	<div class="row">
+-                <div class="col-md-12">
++                <div class="col-md-12">
+                         <form method="POST" action="del/0/" enctype="multipart/form-data" id="ListForm">
+                             <table id="currency_grid" align="left" style="display:none;"></table>
+                         </form>
+-                </div>
++                </div>
+             </div>
+         </div>
+     </div> </div><!--<br/><div class="pull-right padding-r-20">
+-      <a class="btn-tw btn" href="/systems/currency_export_xls/"><i class="fa fa-file-excel-o fa-lg"></i>Export CSV</a>
+-
++      <a class="btn-tw btn" href="<?= base_url() ?>/systems/currency_export_xls/"><i class="fa fa-file-excel-o fa-lg"></i>Export CSV</a>
++
+ </div><br/><br/> -->
+ </section>
+
+-<? endblock() ?>
++<? endblock() ?>
+
+-<? end_extend() ?>
+-
+-
++<? end_extend() ?>
+diff --git a/web_interface/astpp/application/modules/user/views/view_rates_list.php b/web_interface/astpp/application/modules/user/views/view_rates_list.php
+index 3b78e25..8bede7d 100755
+--- a/web_interface/astpp/application/modules/user/views/view_rates_list.php
++++ b/web_interface/astpp/application/modules/user/views/view_rates_list.php
+@@ -3,15 +3,15 @@
+
+ <script type="text/javascript" language="javascript">
+     $(document).ready(function() {
+-
++
+         build_grid("invoice_grid","",<? echo $grid_fields; ?>,<? echo $fs_grid_buttons; ?>);
+         $("#inbound_search_btn").click(function(){
+             post_request_for_search("invoice_grid","<?php echo base_url(); ?>rates/user_inboundrates_list_search/","inbound_search");
+-        });
++        });
+         $("#id_reset").click(function(){
+             clear_search_request("invoice_grid","<?php echo base_url(); ?>rates/user_inboundrates_list_clearsearchfilter/");
+         });
+-
++
+     });
+ </script>
+ <? endblock() ?>
+@@ -20,7 +20,7 @@
+ <?= $page_title ?><br/>
+ <? endblock() ?>
+
+-<? startblock('content') ?>
++<? startblock('content') ?>
+
+ <section class="slice color-three">
+ 	<div class="w-section inverse no-padding">
+@@ -38,11 +38,11 @@
+ 	<div class="w-section inverse no-padding">
+     	<div class="container">
+         	<div class="row">
+-                <div class="col-md-12">
++                <div class="col-md-12">
+                         <form method="POST" action="del/0/" enctype="multipart/form-data" id="ListForm">
+                             <table id="invoice_grid" align="left" style="display:none;"></table>
+                         </form>
+-                </div>
++                </div>
+             </div>
+         </div>
+     </div>
+@@ -50,8 +50,8 @@
+
+   <!--
+ <div style="float:right;"><strong>
+-        <a class="margin-l-20 btn btn-success" href="/user/user_rates_export_xls">Export CSV <img src="/assets/images/file_tree/xls.png" alt='XLS'/></a>
+-        <a class="btn btn-line-parrot" href="/user/user_rates_export_pdf">Export PDF <img src="/assets/images/file_tree/pdf.png" alt='PDF'/></a></strong></div>
+-<br/><br/> -->
+-<? endblock() ?>
+-<? end_extend() ?>
++        <a class="margin-l-20 btn btn-success" href="<?= base_url() ?>/user/user_rates_export_xls">Export CSV <img src="<?= base_url() ?>/assets/images/file_tree/xls.png" alt='XLS'/></a>
++        <a class="btn btn-line-parrot" href="<?= base_url() ?>/user/user_rates_export_pdf">Export PDF <img src="<?= base_url() ?>/assets/images/file_tree/pdf.png" alt='PDF'/></a></strong></div>
++<br/><br/> -->
++<? endblock() ?>
++<? end_extend() ?>
+--
+1.9.1

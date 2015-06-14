@@ -21,6 +21,12 @@
     - gcc
     - cpanminus
     - g++
+    - mysql-server
+    - libdatetime-format-strptime-perl # bitches want us to install this through cpam, fuck cpam, dat shit be sketch
+    - libxml-simple-perl
+    - build-essential # Some of the perl depends wont build without this
+    - python-mysqldb  # So ansible can install the database at the end
+
 - name: Install ASTPP depends from CPAN
   cpanm: name={{ item }}
   with_items:
@@ -30,23 +36,25 @@
     - POSIX
     - DBI
     - Time::HiRes
-    - DateTime::Format::Strptime
-    - XML::Simple
     - CGI
+
 - name: Make some directories
   file: name={{ item }} state=directory owner={{ ASTPP_user }} group={{ ASTPP_group }}
-  with_item:
-    - {{ ASTPP_directory }}
-    - {{ ASTPP_log_directory }}
-    - {{ ASTPP_exec_directory }}
-    - {{ ASTPP_cgi_directory }}
-    - {{ ASTPP_sounds_directory }}
-    - {{ ASTPP_config_directory }}
+  with_items:
+    - "{{ ASTPP_directory }}"
+    - "{{ ASTPP_log_directory }}"
+    - "{{ ASTPP_exec_directory }}"
+    - "{{ ASTPP_cgi_directory }}"
+    - "{{ ASTPP_sounds_directory }}"
+    - "{{ ASTPP_config_directory }}"
+    - "{{ fs_scripts_dir }}"
     - "{{ www_path }}/{{ astpp_wui_name }}"
+
 - name: Clone the ASTPP source
   git: repo=https://github.com/ASTPP/trunk dest={{ ASTPP_directory }}
+
 - name: Copy ASTPP perl files
-  synchronize: mode=pull src={{ ASTPP_directory }}/scripts/{{ item }} dest={{ ASTPP_exec_directory }}/{{ item }}
+  command: cp "{{ ASTPP_directory }}/scripts/{{ item }}" "{{ ASTPP_exec_directory }}/{{ item }}" creates="{{ ASTPP_exec_directory }}/{{ item }}"
   with_items:
     - astpp-callingcard-functions.pl
     - astpp-cdr.pl
@@ -54,10 +62,12 @@
     - astpp-database.pl
     - astpp-logger.pl
     - astpp-xml.pl
+
 - name: Install the callingcards.pl FreeSWITCH script
-  synchronize: mode=pull src={{ ASTPP_directory }}/freeswitch/astpp-callingcards.pl dest={{ fs_scripts_dir }}/astpp-callingcards.pl
+  command: cp "{{ ASTPP_directory }}/freeswitch/astpp-callingcards.pl" "{{ fs_scripts_dir }}/astpp-callingcards.pl" creates="{{ fs_scripts_dir }}/astpp-callingcards.pl"
+
 - name: Install ASTPP sounds
-  synchronize: mode=pull scr={{ ASTPP_directory }}/sounds/{{ item }} dest={{ ASTPP_sounds_directory }}/{{ item }}
+  command: cp "{{ ASTPP_directory }}/sounds/{{ item }}" "{{ ASTPP_sounds_directory }}/{{ item }}" creates="{{ ASTPP_sounds_directory }}/{{ item }}"
   with_items:
     - astpp-accountnum.wav
     - astpp-badaccount.wav
@@ -93,13 +103,53 @@
     - astpp-willcost.wav
 
 - name: Copy sample config in place if they don't already exist
-  command: cp {{ ASTPP_directory }}/astpp_confs/sample.astpp-config.conf {{ ASTPP_config_directory }}/astpp-config.conf creates={{ ASTPP_config_directory }}/astpp-config.conf
+  template: src=astpp-config.php.j2 dest={{ ASTPP_config_directory }}/astpp-config.conf
 
 - name: Install ASTPP web interface files
-  synchronize: mode=pull src={{ ASTPP_directory }}/web_interface/astpp/{{ item }} dest={{ www_path }}/{{ astpp_wui_name }}/{{ item }}
+  command: cp -r "{{ ASTPP_directory }}/web_interface/astpp/{{ item }}" "{{ www_path }}/{{ astpp_wui_name }}/{{ item }}" creates="{{ www_path }}/{{ astpp_wui_name }}/{{ item }}"
   with_items:
     - application
     - assets
     - cron
     - system
     - index.php
+
+- name: Fix ASTPP web UI permissions to be super insecure
+  file: path={{ www_path }}/{{ astpp_wui_name }} owner=www-data group=www-data
+
+- name: Set a root password for the MySQL database (this will fail if it's already been setup, don't worry about it)
+  mysql_user: name=root password="{{ lookup('password', 'credentials/' + inventory_hostname + '/mysqlpw-root length=20 chars=ascii_letters') }}"
+  ignore_errors: yes
+
+- name: Create the ASTPP database
+  mysql_db: name=astpp state=present login_user=root login_password="{{ lookup('password', 'credentials/' + inventory_hostname + '/mysqlpw-root length=20 chars=ascii_letters') }}"
+
+- name: Create an ASTPP user
+  mysql_user: name=astpp password={{ astpp_mysql_password }} priv=astpp.*:ALL login_user=root login_password="{{ lookup('password', 'credentials/' + inventory_hostname + '/mysqlpw-root length=20 chars=ascii_letters') }}"
+
+- name: Install the database, probably overwriting whatever you had before.
+  mysql_db: state=import name=astpp target={{ ASTPP_directory }}/sql/astpp-2.0.sql login_user=root login_password="{{ lookup('password', 'credentials/' + inventory_hostname + '/mysqlpw-root length=20 chars=ascii_letters') }}"
+
+- name: Install ASTPP-specific FreeSWITCH configs
+  command: cp "{{ ASTPP_directory }}/freeswitch/conf/{{ item }}" "{{ fs_conf_dir }}/{{ item }}" creates="{{ fs_conf_dir }}/{{ item }}"
+  with_items:
+    - autoload_configs/xml_curl.conf.xml
+    - autoload_configs/xml_cdr.conf.xml
+    # - autoload_configs/cdr_csv.conf.xml  # What the fuck! This file doesnt exist
+    # - dialplan/default/astpp_callingcards.xml  # What the helll this one doesnt exit either. #jank
+  notify:
+    - restart freeswitch
+
+# - name: Telling ASTPP where we stored it's sound files
+#   lineinfile: regexp="\/usr\/local\/freeswitch\/sounds\/en\/us\/callie" line={{ ASTPP_sounds_directory }} dest={{ item }}
+#   with_items:
+#     - "{{ fs_scripts_dir }}/astpp-callingcards.pl"
+    #TODO: Update sql/astpp-2.0.sql
+
+- name: Tell ASTPP where astpp-config.conf is
+  command: sed -i 's/\/var\/lib\/astpp\/astpp-config.conf/{{ ASTPP_config_directory_escaped }}\/astpp-config.conf/g' {{ item }}
+  with_items:
+    - "{{ www_path }}/{{ astpp_wui_name }}/application/config/cron.php"
+    - "{{ www_path }}/{{ astpp_wui_name }}/application/config/database.php"
+    - "{{ www_path }}/{{ astpp_wui_name }}/application/modules/systems/controllers/systems.php"
+    - "{{ www_path }}/{{ astpp_wui_name }}/application/config/config.php"

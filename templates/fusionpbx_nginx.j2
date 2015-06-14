@@ -7,8 +7,9 @@ server{
         client_max_body_size {{ max_upload_size }};
         client_body_buffer_size 128k;
 
+        root {{ www_path }};
+
         location / {
-                root {{ www_path }}/{{ wui_name }};
                 index index.php;
         }
 
@@ -64,8 +65,9 @@ server{
         client_max_body_size {{ max_upload_size }};
         client_body_buffer_size 128k;
 
+        root {{ www_path }};
+
         location / {
-          root {{ www_path }}/{{ wui_name }};
           index index.php;
         }
 
@@ -117,16 +119,22 @@ server{
         client_max_body_size {{ max_upload_size }};
         client_body_buffer_size 128k;
 
+        root {{ www_path }};
+
         location / {
-          root {{ www_path }}/{{ wui_name }};
           index index.php;
+        }
+
+        location /astpp/ {
+          index index.php;
+          try_files $uri $uri/ /astpp/index.php?q=$args;
         }
 
         location ~ \.php$ {
             fastcgi_pass unix:/var/run/php5-fpm.sock;
             fastcgi_index index.php;
             include fastcgi_params;
-            fastcgi_param   SCRIPT_FILENAME {{ www_path }}/{{ wui_name }}$fastcgi_script_name;
+            fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
         }
 
         # Disable viewing .htaccess & .htpassword & .db
